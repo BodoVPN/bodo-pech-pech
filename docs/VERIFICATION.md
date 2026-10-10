@@ -1,48 +1,49 @@
-# Simple private-file interface verification — 2026-10-10
+# Protected-file verification — 2026-10-10
 
-The generic 0.3 HTML is **402,605 bytes (393.2 KiB)**. SHA-256: `4e6f79b1ced161253b779646a66ee857a6a27d580495724b0e9a78736322a7ee`. Each private export adds exactly 76 ASCII bytes in the inert conversation metadata slot. The generic tracked file has no embedded conversation key. No model, runtime download, server or companion asset is needed.
+The generic 0.4 HTML is **416,351 bytes (406.6 KiB)**. SHA-256: `72d2dc0963a25e99b4a0d3c8115258e645a34b74a801688f3bf98b5577324eab`. Each protected export adds exactly 179 ASCII bytes in the inert metadata slot. The generic tracked file has no conversation key or protected envelope. No model, runtime download, server or companion asset is required. This is the feature branch's review artifact, not a replacement for the published v0.3.0 release.
 
 ## Fresh checks
 
-`npm run check` passed TypeScript, ESLint with zero warnings, **22 protocol tests and 11 browser tests**. No tests were skipped. Saved generic and downloaded private files were exercised under `file://` in Windows **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**, with networking disabled before loading. Observed pages emitted no HTTP requests, page errors or console errors.
+`npm run check` passed TypeScript, ESLint with zero warnings, **27 protocol/storage tests and 16 browser tests**, with none skipped. Real downloads and offline `file://` reopen were tested in Windows **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**. Observed flows emitted no HTTP requests, page errors or console errors. Tests use disposable passphrases/keys only; downloaded private files are removed from an owned scratch directory after completion.
 
-The crypto, v1 codec, v2 grammar tables, dialogue parser and byte packing source files are unchanged from `c859a3b`. The visual refinement also leaves `src/main.ts` and private-file generation logic unchanged from the approved 0.3 UX at `69c2357`. Fresh protocol tests still cover frozen v1/v2 fixtures, independent Node AES fixtures, all 30 public profiles, arbitrary bytes and Unicode, size boundaries, normalization, malformed covers, wrong keys and mutations of authenticated packet bytes/profile/version.
+Message crypto, v1 codec, v2 grammar/parser/tables and byte packing are unchanged from main `b0b85ce`. Frozen v1/v2 fixtures, independent Node AES fixtures, all 30 public profiles, exact Unicode/BOM/whitespace/emoji, arbitrary bytes, bounds and tampered messages still pass. Storage is a separate [BPK1 envelope](KEY-STORAGE.md).
 
-## Typography and visual refinement
+Storage tests cover independent Node PBKDF2/AES-GCM interoperability in both directions, original random-key recovery, fresh salt/nonce, non-extractable runtime keys, wrong passphrases, salt/nonce/ciphertext/tag corruption, NFC-equivalent Unicode passphrases, significant spaces/case/Persian letter variants, lone surrogates and length/PIN rejection. Every fixed header byte is mutated; a derivation spy proves unsupported parameters and malformed/oversized envelope strings are rejected **before** KDF work. Legacy migration preserves the exact original key and existing covers.
 
-Vazirmatn v33.003 is embedded as the unmodified official 111,152-byte variable WOFF2, with Persian/Arabic and Latin glyphs and weights 100–900. Its SHA-256 is `4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92`. Source, upstream commit, copyright and SIL OFL 1.1 are recorded in [font provenance](../assets/fonts/vazirmatn/README.md). Full attribution and license are carried inside an inert HTML template in generic/private copies. No installed-font lookup or CDN is used.
+## Browser behavior
 
-Both browser flows now load the font offline and inspect Chromium's actual rendered glyph fonts via `CSS.getPlatformFontsForNode`, for Persian and English headings in both the starter and the downloaded private file. They require a loaded custom Vazirmatn face, rather than merely checking a declared CSS family. Private exports are checked for the copyright and full-license text. CSP adds only `font-src data:` while retaining the script/style hashes and no-network restrictions.
+- Actual downloaded protected files unlock with one field/button or Enter. Wrong passphrases remain locked and allow retry. Show/Hide updates type, text and accessible pressed/control relationships in both languages. Submission clears the field; exports contain neither passphrase nor raw BPP1 key/code.
+- Two isolated peers exchange messages and replies; an actual Chrome → Edge → Chrome flow passes. V1/v2 recovery, exact private Unicode and existing cover normalization remain intact.
+- Switching tabs/focus/visibility retains unlock. Done clears all message fields and reply context while retaining the key. Reload/reopen requires unlock. Navigate away and Back requires unlock and clears previous plaintext. Explicit pagehide/pageshow coverage exercises the back-forward-cache lifecycle handler as well.
+- Delayed native derivation plus an input change cannot open the conversation or create a download. A second submission during the pending operation cannot launch another derivation. Page abandonment invalidates delayed unlock results. Done and delayed clipboard/encryption tests still prevent stale message restoration.
+- Legacy HTML is constructed from the actual v0.3.0 artifact using a disposable original key. It is imported via the file control, including inserted script/image traps: neither executes nor requests a resource. Its existing message opens using the protected copy. Legacy BPP1 code migration also recovers old v1/v2 traffic. Old files are not modified or revoked.
+- Immutable exports exclude injected draft/result/unrelated DOM state. Removing the encrypted envelope yields the exact generic build; script/style CSP hashes therefore remain identical. Repeated download yields identical protected content. New conversations use independent keys. Wrong-file/tampered/malformed input releases no plaintext.
+- Blocked automatic downloads, allocation failures, clipboard denial/manual fallback, unsupported browsers and CRLF-transformed copies retain tested recovery behavior.
+- No localStorage, sessionStorage or cookies are created in observed message flows. Source uses no IndexedDB, network, logging or secret-bearing URL persistence. Browser/OS password management, clipboard history, crash recovery and memory are outside this guarantee.
 
-The visual pass uses a 20px base size, variable weights, comfortable Persian line spacing, quiet charcoal primary actions, thin neutral borders and a small blue accent. Text inputs use one 2px focus outline with a neutral inner border. Calculated text contrast is 16.83:1 for body text, 6.07:1 for secondary copy, 5.56:1 for links/focus blue on white, 4.66:1 for footer text and 15.49:1 for primary button labels. These are selected color-pair checks, not a full accessibility audit.
+## Unlock latency
 
-`scripts/capture-ui.mjs` captures 38 actual offline screenshots across Chrome and Edge at 1360×1040 and 390×844. Setup, download, home, writing, generated cover, reading and opened-message screens were reviewed alongside English, keyboard focus and 200% text enlargement. The home also reflows at 320px in the regression suite. No screens, controls, copy, action order or state transitions were added. No animation or heavy GPU effect is used. Private test keys are not shown; the displayed demonstration message is synthetic, and screenshots are kept outside Git.
+Five runs per installed browser, fixed 600,000 PBKDF2-HMAC-SHA-256 iterations, already-open local HTML and networking disabled. Measured with `performance.now()` inside the browser from unlock form submission until conversation visibility changes; includes derivation, unwrap/import and UI application, but excludes file opening/startup and human typing. Browsers ran headless on this Windows desktop. Raw records are generated as ignored `test-results/unlock-timing-*.json`.
 
-Browser flows cover:
+| Browser | Runs (ms) | Median |
+| --- | --- | --- |
+| Chrome 155.0.8059.39 | 69, 69, 69, 69, 69 | 69 ms |
+| Edge 156.0.4314.15 | 71, 71, 70, 69, 74 | 71 ms |
 
-- Creating a file with the generic starter, observing the real download, saving it, and reopening it offline. Download retry yields byte-identical content for the same conversation. Both Chrome and Edge complete this flow.
-- Two isolated peers using the same downloaded file, exact Unicode/BOM/whitespace/emoji/HTML-like text, normalized Persian covers, automatic reply context, and actual Chrome-to-Edge-to-Chrome exchange.
-- Done clearing all message fields and reply context while preserving pairing; reload and closing/reopening still recover old messages with the private file.
-- Injecting synthetic draft, pasted/result text and unrelated DOM state into the live page before export. None appears in the download. Removing the single key value makes the exported bytes identical to the known generic artifact. The script and style are unchanged, so their CSP hashes still match.
-- Independent new conversations generating distinct random keys; navigating from one conversation file to another cannot recover the first conversation's cover with the second file. Wrong-key failures expose no plaintext.
-- Legacy BPP1 conversion, existing v1 and v2 messages, truncated/altered/malformed covers, invalid/injection-shaped setup input, and a damaged private key field.
-- Done invalidating an in-flight encryption result; a delayed clipboard paste cannot restore cleared text. Clipboard success and denial paths include full-text selection and manual paste instructions.
-- Blocked automatic download retried through the visible link; a simulated file-allocation failure can also be retried. A ready-file message is not a claim that the user's browser has saved it.
-- Unsupported browser behavior and Windows CRLF conversion retaining the hashed CSP in a downloaded private file.
-- Persian/English direction and labels, focused results/errors, 48+ pixel tested targets, 390- and 320-pixel layouts, and 200% text enlargement without horizontal document overflow. Setup, home and enlarged-write screenshots were visually reviewed.
+These are local observations, not performance guarantees or Android measurements. No cost reduction is made for slow devices. Budget-phone unlock/startup latency and file handling remain unverified.
 
-Disposable keyed test files are saved outside the output repository in an owned workspace scratch directory and deleted after the test suite. No real conversation keys or personal files are committed. Test screenshots are ignored under `test-results/`.
+## Visual and font review
 
-## Security and usability boundaries
+The existing white/gray/charcoal layout and Write/Read/Reply/Done screens remain intact. Necessary additions are the setup passphrase field/Show-Hide, one unlock screen and old-HTML migration option. No animation or GPU-heavy effect was added. At 320px width and 200% text enlargement, setup/unlock reflow without document overflow; tested buttons retain at least 48px targets. Existing home/write checks continue at 390/320px. This is text enlargement, not native mobile pinch-zoom validation or a full accessibility audit.
 
-Everyday use has two actions and no code/fingerprint/confirmation screens. The key is deliberately stored **unencrypted in the private HTML**. Anyone with it can read past/future messages or forge messages for either person; a trusted helper also has that access. The one-time handover must still be confidential and authenticated. There is no sender identity proof, forward secrecy, replay prevention, recovery service or independent audit. See [SECURITY.md](../SECURITY.md).
+The original official Vazirmatn v33.003 variable WOFF2 remains embedded, with its full SIL OFL 1.1 and attribution. Font asset SHA-256 remains `4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92`. Browser tests inspect actual custom rendered glyph fonts in Persian and English for downloaded-file home, starter download and unlock headings while offline. See [font provenance](../assets/fonts/vazirmatn/README.md).
 
-Exports use an immutable shell embedded at build time plus the original bootstrap script. They do not serialize the rendered page. There is no browser storage or key cache shared across files. Application clearing cannot erase downloaded files, OS/browser history, clipboard contents or all memory.
+`scripts/capture-ui.mjs` captures 50 offline Chrome/Edge screenshots across 1360×1040 and 390×844, including new empty setup/unlock screens in both languages, daily messaging screens, focus and enlarged text. Temporary private files are deleted; screenshots contain synthetic message text only and are kept outside Git for review.
 
-This is developer verification, not a usability study with older adults or proof of universal browser/download compatibility. The browser still owns file-save prompts and the user must open the downloaded file. Persian covers retain their prior length, artificiality and detectability limitations.
+## Limits and outstanding validation
 
-Android remains unverified. No device was attached; automatic approval review rejected emulator launch with only “blocked by policy.” It was not retried. The [real-device checklist](ANDROID-CHECK.md) now includes private-file creation, download, reopening and handover in addition to exchange/clipboard/performance. Desktop viewport and enlarged-text checks are not Android or native pinch-zoom tests.
+This is developer verification, not an independent security audit or user study. A predictable passphrase remains vulnerable to offline guessing. The envelope protects the saved random key but does not authenticate the HTML program or provide forward secrecy, sender identity, replay prevention or protection for an unlocked compromised device. Old plaintext files/codes remain usable; migration cannot revoke them. See [SECURITY.md](../SECURITY.md).
 
-## Historical measurements
+No Android device was attached. The previously attempted emulator launch was rejected by automatic approval review with “blocked by policy”; it was not retried. The [real-device checklist](ANDROID-CHECK.md) now includes passphrase entry, unlock timing, messenger switching, reload and legacy migration. Desktop width checks do not verify Galaxy A51-class devices.
 
-The 360-run codec comparison, cover samples and old startup/heap timings are retained in [VERIFICATION-V2.md](VERIFICATION-V2.md). The historical script now loads both pinned Git artifacts, because its interface selectors describe those builds. Those numbers are not measurements of the redesigned 0.3 UI; the unchanged protocol did not warrant rerunning the extensive benchmark.
+The historical 360-run codec comparison and old startup/heap measurements remain in [VERIFICATION-V2.md](VERIFICATION-V2.md). They are not current UI/unlock measurements and were not rerun for unchanged message encoding.

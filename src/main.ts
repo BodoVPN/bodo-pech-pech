@@ -1,6 +1,7 @@
-import { bytesToText, createPair, decryptBytes, encryptBytesV2, importPair, MAX_MESSAGE_BYTES, textToBytes } from './crypto.ts';
+import { bytesToText, createPair, decryptBytes, encryptBytesV2, MAX_MESSAGE_BYTES, textToBytes } from './crypto.ts';
 import { chooseProfile, decodeMessageCover, encodeDialogue } from './dialogue.ts';
 import { personalFile } from './personal-file.ts';
+import { createProtectedConversation, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectedFileId, unlockConversation, validateNewPassphrase } from './key-storage.ts';
 
 declare const __BPP_SHELL__: string;
 const script = document.currentScript?.textContent ?? '';
@@ -22,7 +23,9 @@ let busy = false;
 let revision = 0;
 let replyContext = '';
 let openedCover = '';
-let downloadCode = '';
+let downloadEnvelope = '';
+let embeddedEnvelope = '';
+let deriving = false;
 let downloadUrl = '';
 let status: [string, string] = ['', ''];
 let errorText: [string, string] = ['', ''];
@@ -41,7 +44,7 @@ function fail(fa: string, en: string): void {
   el('error').focus();
 }
 function buttons(): void {
-  for (const id of ['generate', 'import']) button(id).disabled = !supported || busy;
+  for (const id of ['generate', 'import', 'unlock']) button(id).disabled = !supported || busy || deriving;
   for (const id of ['encrypt', 'decrypt', 'paste-cover']) button(id).disabled = !key || busy;
   for (const id of ['copy-cover', 'copy-plain', 'reply']) button(id).disabled = busy;
 }
@@ -82,37 +85,83 @@ function mode(receive: boolean): void {
   el('send-panel').hidden = receive; el('receive-panel').hidden = !receive;
   area(receive ? 'received' : 'message').focus();
 }
-function makeDownload(code: string): void {
+function makeDownload(envelope: string): void {
   if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-  downloadUrl = URL.createObjectURL(new Blob([personalFile(pristine, code)], { type: 'text/html;charset=utf-8' }));
+  downloadUrl = URL.createObjectURL(new Blob([personalFile(pristine, envelope)], { type: 'text/html;charset=utf-8' }));
   el<HTMLAnchorElement>('download').href = downloadUrl;
 }
-function offerFile(code: string, fingerprint: string): void {
-  makeDownload(code);
-  downloadCode = code;
+function offerFile(envelope: string): void {
+  makeDownload(envelope);
+  downloadEnvelope = envelope;
   const link = el<HTMLAnchorElement>('download');
-  link.download = `pech-pech-private-${fingerprint.replaceAll(' ', '').slice(0, 8).toLowerCase()}.html`;
+  link.download = `pech-pech-private-${protectedFileId(envelope)}.html`;
   el('setup-controls').hidden = true;
   el('download-panel').hidden = false;
   el<HTMLInputElement>('import-code').value = '';
+  el<HTMLInputElement>('import-file').value = '';
   el('download-heading').focus();
   link.click();
 }
-button('generate').addEventListener('click', () => {
-  if (!supported || busy || downloadCode) return;
-  void run(async () => {
-    const pair = await createPair();
-    return () => offerFile(pair.code, pair.fingerprint);
-  }, ['فایل ساخته نشد. دوباره امتحان کنید.', 'The file could not be created. Try again.']);
-});
-el('import-form').addEventListener('submit', (event) => {
+function visibilityLabel(id: string): void {
+  const showing = el<HTMLInputElement>(`${id}-passphrase`).type === 'text';
+  button(`${id}-show`).textContent = showing ? t('پنهان', 'Hide') : t('نمایش', 'Show');
+  button(`${id}-show`).setAttribute('aria-pressed', String(showing));
+}
+function clearPassphrase(id: string): void {
+  const field = el<HTMLInputElement>(`${id}-passphrase`);
+  field.value = ''; field.type = 'password'; visibilityLabel(id);
+}
+for (const id of ['setup', 'unlock']) {
+  button(`${id}-show`).addEventListener('click', () => {
+    const field = el<HTMLInputElement>(`${id}-passphrase`);
+    field.type = field.type === 'password' ? 'text' : 'password'; visibilityLabel(id);
+  });
+  el(`${id}-passphrase`).addEventListener('input', () => { cancelPending(); feedback(); });
+}
+// Native Web Crypto cannot be aborted. Invalidate results, but allow only one
+// key operation until its promise settles, including after an input change.
+async function keyOperation(operation: () => Promise<() => void>, error: [string, string]): Promise<void> {
+  deriving = true;
+  try { await run(operation, error); } finally { deriving = false; buttons(); }
+}
+function prepareFile(migrate: boolean): void {
+  if (!supported || busy || deriving || downloadEnvelope) return;
+  let passphrase = el<HTMLInputElement>('setup-passphrase').value;
+  try { validateNewPassphrase(passphrase); } catch {
+    fail('عبارت رمزی طولانی انتخاب کنید: دست‌کم ۱۶ نویسه، بهتر است پنج واژهٔ نامرتبط باشد. از پین استفاده نکنید.', 'Choose a long passphrase: at least 16 characters, ideally five unrelated words. Do not use a PIN.'); return;
+  }
+  let code = migrate ? el<HTMLInputElement>('import-code').value : undefined;
+  const file = migrate ? el<HTMLInputElement>('import-file').files?.[0] : undefined;
+  clearPassphrase('setup');
+  el<HTMLInputElement>('import-code').value = '';
+  el<HTMLInputElement>('import-file').value = '';
+  void keyOperation(async () => {
+    try {
+      if (file) {
+        if (file.size > MAX_LEGACY_FILE_BYTES || code) throw new Error('Choose one legacy source');
+        code = legacyCodeFromHtml(await file.text());
+      }
+      const envelope = await createProtectedConversation(passphrase, code);
+      return () => offerFile(envelope);
+    } finally { passphrase = ''; code = undefined; }
+  }, migrate
+    ? ['فایل یا کد قدیمی معتبر نیست، یا فایل تازه ساخته نشد. عبارت رمز را دوباره وارد و امتحان کنید.', 'The old file or code is invalid, or the new file could not be created. Enter your passphrase and try again.']
+    : ['فایل ساخته نشد. عبارت رمز را دوباره وارد و امتحان کنید.', 'The file could not be created. Enter your passphrase and try again.']);
+}
+el('setup-form').addEventListener('submit', (event) => { event.preventDefault(); prepareFile(false); });
+el('import-form').addEventListener('submit', (event) => { event.preventDefault(); prepareFile(true); });
+for (const id of ['import-code', 'import-file']) el(id).addEventListener('input', () => { cancelPending(); feedback(); });
+el('unlock-form').addEventListener('submit', (event) => {
   event.preventDefault();
-  if (!supported || busy || downloadCode) return;
-  const code = el<HTMLInputElement>('import-code').value;
-  void run(async () => {
-    const pair = await importPair(code);
-    return () => offerFile(code, pair.fingerprint);
-  }, ['کد کامل نیست یا درست کپی نشده است. کد قبلی را دوباره بچسبانید.', 'That code is incomplete or incorrect. Paste the complete old setup code.']);
+  if (!supported || busy || deriving || key || !embeddedEnvelope) return;
+  let passphrase = el<HTMLInputElement>('unlock-passphrase').value;
+  clearPassphrase('unlock');
+  void keyOperation(async () => {
+    try {
+      const unlocked = await unlockConversation(embeddedEnvelope, passphrase);
+      return () => { key = unlocked; el('unlock-panel').hidden = true; el('conversation').hidden = false; home(); };
+    } finally { passphrase = ''; }
+  }, ['عبارت رمز درست نیست یا فایل تغییر کرده است. دوباره امتحان کنید.', 'The passphrase is incorrect or the file has changed. Try again.']);
 });
 el('send-form').addEventListener('submit', (event) => {
   event.preventDefault();
@@ -220,16 +269,23 @@ button('language').addEventListener('click', () => {
   el('feedback').textContent = t(...status);
   el('error').textContent = t(...errorText);
   el('conversation').setAttribute('aria-label', t('گفت‌وگو', 'Conversation'));
+  for (const id of ['setup', 'unlock']) visibilityLabel(id);
 });
 window.addEventListener('pagehide', () => {
   home(false);
   el<HTMLInputElement>('import-code').value = '';
+  el<HTMLInputElement>('import-file').value = '';
+  for (const id of ['setup', 'unlock']) clearPassphrase(id);
+  key = undefined;
+  el('conversation').hidden = true;
+  if (embeddedEnvelope) el('unlock-panel').hidden = false;
+  buttons();
   if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = ''; }
 });
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
     home(false);
-    if (downloadCode) makeDownload(downloadCode);
+    if (downloadEnvelope) makeDownload(downloadEnvelope);
   }
 });
 
@@ -246,8 +302,9 @@ async function start(): Promise<void> {
     embedded = slot.content;
     slot.content = '';
     if (embedded) {
-      key = (await importPair(embedded)).key;
-      el('conversation').hidden = false;
+      parseEnvelope(embedded);
+      embeddedEnvelope = embedded;
+      el('unlock-panel').hidden = false;
     } else el('setup-panel').hidden = false;
     el('capability').hidden = true;
   } catch {

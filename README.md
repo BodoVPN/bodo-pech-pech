@@ -7,24 +7,25 @@ Everyday use has two large Persian buttons: **نوشتن پیام** (Write a mes
 ## Prepare once
 
 1. Open a trusted copy of [bodo-pech-pech.html](bodo-pech-pech.html) in Chrome or Edge. On GitHub, use **Download raw file**, then open the saved file in the full browser.
-2. Choose **Make & save conversation file**. The browser starts downloading a private `pech-pech-private-….html` file. If nothing downloads, choose **Save the file again**. Browser save prompts and Downloads remain outside the page's control.
-3. Open the downloaded private file. Keep a copy and give **the same file** to the other person in person or through another trusted confidential channel. A trusted helper can do this once for both people. Do not create two different files independently.
+2. Enter one long passphrase, ideally five unrelated words (minimum 16 characters; no PIN). Show/Hide helps check it without a second confirmation field. Choose **Make & save conversation file**. If no download appears, choose **Save the file again**. Browser save prompts and Downloads remain outside the page's control.
+3. Open the downloaded private `pech-pech-private-….html` file and **Unlock** with that passphrase. Give **the same file** and passphrase to the other person privately; keep the passphrase separate from the file when sending it. Do not create two different files independently.
 
-**The private file contains the conversation's secret. Anyone who gets it can read old and new messages and write messages as either person. Hand it over privately, never through a monitored messenger.** Keep it out of shared/synced folders. The generic repository file contains no conversation secret. Each new setup creates an independent random 256-bit key; there is no master key or password.
+**The saved conversation key is encrypted with your passphrase.** Someone holding the file can try passphrase guesses offline; minimum length does not prove strength. Use a long, hard-to-guess phrase and keep it safe: there is no reset or recovery. Anyone with the file and passphrase can read old/new messages and write as either person. The generic file has no conversation secret. Each new setup creates an independent random 256-bit key; the passphrase protects that key rather than replacing it.
 
-The old fingerprint/confirmation ritual is replaced by reliance on a trusted handover of the same unmodified file. Private handover is still necessary. If the file is lost or exposed, create a new conversation with the generic starter and hand it over privately; old traffic remains exposed to the old file.
+Trust still depends on an authentic, unmodified HTML file and private handover. A helper who creates the file knows its passphrase. If the key or passphrase is exposed, create a new conversation and hand it over privately; changing storage protection cannot secure already-exposed traffic.
 
 ## Everyday use
 
-- **Send:** open your private file → **Write a message** → write → **Prepare message** → **Copy text**, then paste the entire result into your messenger. Do not edit or shorten the cover.
-- **Read:** open the same private file → **Read a message** → paste the received text → **Read message**. **Write a reply** continues the visible conversation automatically.
-- **Done · clear messages** clears message fields and returns to the two buttons. Pairing survives Done, closing and reopening because the secret stays in the private file.
+- **Unlock once:** opening or reloading asks for the passphrase. Enter submits. Switching to your messenger and returning keeps the tab unlocked.
+- **Send:** **Write a message** → write → **Prepare message** → **Copy text**, then paste the entire result into your messenger. Do not edit or shorten the cover.
+- **Read:** **Read a message** → paste the received text → **Read message**. **Write a reply** continues the visible conversation automatically.
+- **Done · clear messages** clears message fields/context and returns to the two buttons, keeping the tab unlocked. Closing, reloading or navigating away drops the runtime key. Reopening requires the passphrase and retains the same conversation.
 
 Only the current step is shown. Denied clipboard access falls back to text selection or input focus with short manual instructions. Messages are never added to private downloads, and no browser storage is used. Browser/OS clipboard history is separate. Clearing drops references; it does not guarantee memory erasure.
 
 ## Existing conversations
 
-The starter's collapsed **Already have an old setup code?** option converts a generated BPP1 code into a private file for the same conversation. Both v1 and v2 covers remain readable; new covers use v2. Both people need a v2-capable file to receive new messages. Leave old working tabs alone until you have retained their codes/messages.
+Enter a new passphrase in the starter, then open **Protect an older conversation**. Choose the old private HTML file **or** paste its BPP1 setup code, then save a protected copy. The old HTML is read as text, never executed or opened as a document. The original conversation key is preserved, so existing v1/v2 covers remain readable and replies still use v2. **Old plaintext files/codes still work and cannot be revoked by this conversion.** Keep them safe or delete retained copies/backups; deletion cannot be guaranteed. Migration is not recovery from an already-compromised key.
 
 ## What to expect
 
@@ -36,9 +37,9 @@ AES-256-GCM, random nonces and authenticated format/profile headers are unchange
 
 ## Support and verification
 
-The self-contained file is about **393 KiB**, including the embedded Persian/Latin font, clean export template, CSS, script and grammar. Generic and private copies require no network requests or companion files. The existing messenger supplies transport and may require its own network.
+The self-contained file is about **407 KiB**, including the embedded Persian/Latin font, clean export template, CSS, script and grammar. Generic and private copies require no network requests or companion files. The existing messenger supplies transport and may require its own network.
 
-The minimal visual design uses Vazirmatn v33.003 by Saber Rastikerdar: an original variable WOFF2 from the [official project](https://github.com/rastikerdar/vazirmatn/tree/v33.003), including its Latin glyphs. The full SIL Open Font License 1.1 and copyright notice are embedded in the HTML and private exports. Font assets and provenance are in [assets/fonts/vazirmatn](assets/fonts/vazirmatn/README.md). Nothing is fetched from a font CDN, and no Apple font is redistributed. Only visuals changed: the approved actions, wording, order and behavior remain the same.
+The minimal visual design uses Vazirmatn v33.003 by Saber Rastikerdar: an original variable WOFF2 from the [official project](https://github.com/rastikerdar/vazirmatn/tree/v33.003), including its Latin glyphs. The full SIL Open Font License 1.1 and copyright notice are embedded in the HTML and private exports. Font assets and provenance are in [assets/fonts/vazirmatn](assets/fonts/vazirmatn/README.md). Nothing is fetched from a font CDN, and no Apple font is redistributed. Setup, unlock and migration add the required controls; the daily messaging UI remains the same.
 
 Actual downloaded private files were reopened offline under `file://` in Windows **Chrome and Edge**, including exchange and reply between them. Tests cover separate conversation keys, clean exports, v1/v2 recovery, tampering, download/clipboard failures, clearing, reopening, narrow layouts and enlarged text. See [current verification](docs/VERIFICATION.md).
 
@@ -55,10 +56,10 @@ npm run check
 
 `npm run build` writes the committed generic `bodo-pech-pech.html`. Do not distribute unbundled `src/index.html`. There are no application runtime dependencies. Browser tests use installed Chrome and Edge; missing requested browsers fail. `BROWSER_CHANNELS=chrome` is available locally but does not replace a full run. Downloaded test files use disposable keys and are removed from an owned workspace scratch directory afterward. Never commit a personal keyed file.
 
-The build embeds an immutable empty UI shell. Private exports reuse that shell and the original bootstrap script, changing only one inert metadata key slot; they never serialize the live UI. Script/style hashes stay identical. The generic artifact contains no conversation key.
+The build embeds an immutable empty UI shell. Private exports reuse that shell and the original bootstrap script, changing only one inert metadata slot with a versioned encrypted envelope; they never serialize the live UI. Script/style hashes stay identical. No passphrase, raw key, BPP1 code or message enters new exports. See [key storage](docs/KEY-STORAGE.md) for PBKDF2-HMAC-SHA-256 at 600,000 iterations, AES-256-GCM, bounds and tradeoffs.
 
 `node scripts/capture-ui.mjs` creates offline Chrome/Edge screenshots of the saved generic and downloaded private file at desktop and phone widths, including English, keyboard focus and enlarged text. Its default output is ignored `work/ui-preview`; an explicit output directory may be passed. Only synthetic demonstration text is used, and temporary keyed files are deleted. Screenshots are review outputs, not committed product assets.
 
-`node scripts/compare.mjs` reproduces the **historical v1 versus v2 codec comparison** using both pinned artifacts from Git, not today's UI. Those measurements and covers remain in [VERIFICATION-V2.md](docs/VERIFICATION-V2.md); they are not fresh timing/memory measurements of 0.3. No new benchmark is claimed for the unchanged codec.
+`node scripts/compare.mjs` reproduces the **historical v1 versus v2 codec comparison** using both pinned artifacts from Git, not today's UI. Those measurements and covers remain in [VERIFICATION-V2.md](docs/VERIFICATION-V2.md); they are not measurements of 0.4. Current verification measures desktop unlock separately. No new benchmark is claimed for the unchanged codec.
 
 No project license has been chosen. Earlier model investigation was stopped; [MODEL-NOTE.md](docs/MODEL-NOTE.md) records the limited results. No AI is shipped.

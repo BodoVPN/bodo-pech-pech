@@ -1,11 +1,12 @@
-// Export only the immutable build-time shell plus the original bootstrap script.
-// The key is an inert, restricted-format metadata value, not JavaScript or a URL.
-export function personalFile(pristine: string, code: string): string {
-  const canonical = code.replace(/[\s-]/g, '').toUpperCase();
-  if (!/^BPP1[0-9A-F]{72}$/.test(canonical)) throw new Error('Invalid conversation code');
+import { parseEnvelope } from './key-storage.ts';
+
+// Only an authenticated-encryption envelope goes into the immutable shell.
+// No live DOM, passphrase, plaintext key or legacy code is ever exported.
+export function personalFile(pristine: string, envelope: string): string {
+  parseEnvelope(envelope);
   const slot = '<meta name="bpp-conversation" content="">';
   if (!pristine.includes(slot)) throw new Error('Invalid file template');
   // The first occurrence belongs to the document head. Any later occurrence
   // is the inert shell literal inside the script and must remain key-free.
-  return pristine.replace(slot, () => `<meta name="bpp-conversation" content="${canonical}">`);
+  return pristine.replace(slot, () => `<meta name="bpp-conversation" content="${envelope}">`);
 }

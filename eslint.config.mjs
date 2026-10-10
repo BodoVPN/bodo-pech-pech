@@ -13,6 +13,7 @@ export default [
         'window', 'navigator', 'HTMLElement', 'HTMLInputElement',
         'HTMLTextAreaElement', 'HTMLButtonElement', 'HTMLSelectElement',
         'HTMLFormElement', 'setTimeout', 'clearTimeout', 'location',
+        'Event', 'PageTransitionEvent', 'MutationObserver', 'performance',
         'isSecureContext', 'innerWidth', 'localStorage', 'sessionStorage', 'getComputedStyle',
       ].map((name) => [name, 'readonly'])),
     },

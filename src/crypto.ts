@@ -82,7 +82,7 @@ export function bytesToText(bytes: Uint8Array): string {
 
 export function packetTopic(packet: Uint8Array): number {
   validatePacket(packet);
-  if (packet[3] !== 1) throw new Error('This is not a supported Bodo Pech Pech v1 message.');
+  if (packet[3] !== 1) throw new Error('This is not a supported BodoPechPech v1 message.');
   return packet[4];
 }
 
@@ -91,7 +91,7 @@ export function validatePacket(packet: Uint8Array): void {
     throw new Error('The message length is invalid or the text is incomplete. Copy the whole cover text.');
   }
   if (packet[0] !== 0x42 || packet[1] !== 0x50 || packet[2] !== 0x50 || ![1, 2].includes(packet[3])) {
-    throw new Error('This is not a supported Bodo Pech Pech message version.');
+    throw new Error('This is not a supported BodoPechPech message version.');
   }
   if (packet[4] >= (packet[3] === 1 ? 3 : V2_PROFILE_COUNT)) throw new Error('The message has an unsupported cover profile.');
   if (packet[3] === 1 && packet.length > MAX_MESSAGE_BYTES + PACKET_OVERHEAD) throw new Error('The v1 message exceeds its size limit.');

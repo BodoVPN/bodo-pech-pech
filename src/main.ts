@@ -1,7 +1,7 @@
 import { bytesToText, createPair, decryptBytes, encryptBytesV2, MAX_MESSAGE_BYTES, textToBytes } from './crypto.ts';
 import { chooseProfile, decodeMessageCover, encodeDialogue } from './dialogue.ts';
 import { personalFile } from './personal-file.ts';
-import { createProtectedConversation, generatePassphrase, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectedFileId, unlockConversation, validateNewPassphrase } from './key-storage.ts';
+import { createProtectedConversation, generatePassphrase, legacyCodeFromHtml, MAX_CONVERSATION_FILE_BYTES, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectedEnvelopeFromHtml, protectedFileId, unlockConversation, validateNewPassphrase } from './key-storage.ts';
 
 declare const __BPP_SHELL__: string;
 const script = document.currentScript?.textContent ?? '';
@@ -44,7 +44,7 @@ function fail(fa: string, en: string): void {
   el('error').focus();
 }
 function buttons(): void {
-  for (const id of ['generate', 'import', 'unlock']) button(id).disabled = !supported || busy || deriving;
+  for (const id of ['generate', 'import', 'unlock', 'open-file']) button(id).disabled = !supported || busy || deriving;
   button('generate-passphrase').disabled = !supported;
   for (const id of ['encrypt', 'decrypt', 'paste-cover']) button(id).disabled = !key || busy;
   for (const id of ['copy-cover', 'copy-plain', 'reply']) button(id).disabled = busy;
@@ -95,7 +95,7 @@ function offerFile(envelope: string): void {
   makeDownload(envelope);
   downloadEnvelope = envelope;
   const link = el<HTMLAnchorElement>('download');
-  link.download = `pech-pech-private-${protectedFileId(envelope)}.html`;
+  link.download = `bodo-pech-pech-private-${protectedFileId(envelope)}.html`;
   el('setup-controls').hidden = true;
   el('download-panel').hidden = false;
   el<HTMLInputElement>('import-code').value = '';
@@ -160,6 +160,29 @@ function prepareFile(migrate: boolean): void {
 }
 el('setup-form').addEventListener('submit', (event) => { event.preventDefault(); prepareFile(false); });
 el('import-form').addEventListener('submit', (event) => { event.preventDefault(); prepareFile(true); });
+el('open-file-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  if (!supported || busy || deriving || embeddedEnvelope) return;
+  const field = el<HTMLInputElement>('saved-file');
+  const file = field.files?.[0];
+  field.value = '';
+  if (!file) { fail('فایل خصوصی ذخیره‌شده را انتخاب کنید.', 'Choose your saved private file.'); return; }
+  void run(async () => {
+    if (file.size > MAX_CONVERSATION_FILE_BYTES) throw new Error('Conversation file is too large');
+    // Read bounded metadata as text. Never navigate to or execute selected HTML.
+    const envelope = protectedEnvelopeFromHtml(await file.text());
+    return () => {
+      embeddedEnvelope = envelope;
+      clearPassphrase('setup'); clearPassphrase('unlock');
+      el<HTMLInputElement>('import-code').value = '';
+      el<HTMLInputElement>('import-file').value = '';
+      el('setup-panel').hidden = true;
+      el('unlock-panel').hidden = false;
+      el('unlock-passphrase').focus();
+    };
+  }, ['این فایل گفت‌وگوی محافظت‌شده معتبر نیست. نسخهٔ اصلی را انتخاب کنید. برای فایل‌های قدیمیِ بدون رمز، «محافظت از گفت‌وگوی قبلی» را بزنید.', 'This is not a valid protected conversation file. Choose the original copy. For older unprotected files, use Protect an older conversation.']);
+});
+el('saved-file').addEventListener('input', () => { cancelPending(); feedback(); });
 for (const id of ['import-code', 'import-file']) el(id).addEventListener('input', () => { cancelPending(); feedback(); });
 el('unlock-form').addEventListener('submit', (event) => {
   event.preventDefault();
@@ -285,6 +308,7 @@ window.addEventListener('pagehide', () => {
   home(false);
   el<HTMLInputElement>('import-code').value = '';
   el<HTMLInputElement>('import-file').value = '';
+  el<HTMLInputElement>('saved-file').value = '';
   for (const id of ['setup', 'unlock']) clearPassphrase(id);
   key = undefined;
   el('conversation').hidden = true;
@@ -320,7 +344,7 @@ async function start(): Promise<void> {
   } catch {
     fail(...(embedded
       ? ['این فایل خصوصی آسیب دیده است. نسخهٔ اصلی را دوباره از فرد مورد اعتماد بگیرید.', 'This private file is damaged. Get the original copy again from the person you trust.'] as [string, string]
-      : ['این فایل اینجا کار نمی‌کند. آن را در Chrome یا Edge باز کنید، نه پیش‌نمایش فایل.', 'This file cannot work here. Open it in Chrome or Edge, not a file previewer.'] as [string, string]));
+      : ['این نمایشگر امکان رمزگذاری لازم را ندارد. Chrome یا Edge ویندوز را امتحان کنید. پیش‌نمایش پیوست iPhone و iPad پشتیبانی نمی‌شود.', 'This viewer lacks the required encryption support. Try Windows Chrome or Edge. iPhone and iPad attachment previews are not supported.'] as [string, string]));
     el('capability').hidden = true;
   }
   buttons();

@@ -5,15 +5,16 @@ import { pathToFileURL } from 'node:url';
 import test, { after } from 'node:test';
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
-import { createPair, encryptBytes, encryptBytesV2, textToBytes } from '../src/crypto.ts';
+import { bytesToText, createPair, decryptBytes, encryptBytes, encryptBytesV2, textToBytes } from '../src/crypto.ts';
 import { unlockConversation, validateNewPassphrase } from '../src/key-storage.ts';
 import { encodeCover } from '../src/codec.ts';
 import { decodeMessageCover, encodeDialogue } from '../src/dialogue.ts';
+import { personalFile } from '../src/personal-file.ts';
 
 const fileUrl = pathToFileURL(resolve('bodo-pech-pech.html')).href;
 const channels = (process.env.BROWSER_CHANNELS || 'chrome,msedge').split(',');
 const passphrase = 'Disposable test words river garden moon 7!';
-const testRoot = resolve('../../work/pech-pech-tests');
+const testRoot = resolve('../../work/bodo-pech-pech-tests');
 await mkdir(testRoot, { recursive: true });
 await mkdir('test-results', { recursive: true });
 const directory = await mkdtemp(resolve(testRoot, 'run-'));
@@ -36,7 +37,9 @@ async function saveDownload(page, trigger) {
   const path = resolve(directory, `private-test-${++fileNumber}.html`);
   await download.saveAs(path);
   assert.equal(await download.failure(), null);
-  assert.match(download.suggestedFilename(), /^pech-pech-private-[a-f0-9]{8}\.html$/);
+  assert.match(download.suggestedFilename(), /^bodo-pech-pech-private-[a-f0-9]{8}\.html$/);
+  assert.equal(await page.locator('#download').getAttribute('download'), download.suggestedFilename());
+  assert.equal(await page.title(), 'BodoPechPech · بدو پچ پچ');
   return { path, url: pathToFileURL(path).href, html: await readFile(path, 'utf8') };
 }
 async function createFile(page, code) {
@@ -72,7 +75,7 @@ async function assertEmbeddedTypeface(page, selector) {
     for (const language of ['fa', 'en']) {
       if (await page.locator('html').getAttribute('lang') !== language) await page.locator('#language').click();
       const loaded = await page.evaluate(async () => {
-        const fonts = await document.fonts.load('600 20px "Vazirmatn"', 'پچ‌پچ Sample');
+        const fonts = await document.fonts.load('600 20px "Vazirmatn"', 'بدو پچ پچ BodoPechPech');
         await document.fonts.ready;
         return fonts.length > 0 && fonts.every((font) => font.status === 'loaded');
       });
@@ -107,6 +110,69 @@ function codeOf(file) {
   assert.ok(!file.html.includes(passphrase), 'Passphrase must never enter the exported file');
   return code;
 }
+
+for (const channel of channels) test(`${channel}: locally read an old protected attachment without executing it or changing its key or Windows zone`, { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ channel, headless: true });
+  try {
+    const context = await browser.newContext({ offline: true });
+    const page = await context.newPage(); const clean = observe(page);
+    const generated = await createFile(page);
+    const envelope = codeOf(generated);
+    const oldShell = execFileSync('git', ['show', 'v0.4.1:bodo-pech-pech.html'], { encoding: 'utf8', maxBuffer: 2 * 1024 * 1024 });
+    const oldHtml = personalFile(oldShell, envelope).replace('</body>', '<script>window.attachmentExecuted=true</script><img src="https://invalid.example/must-not-load"></body>');
+    const oldPath = resolve(directory, `old-protected-${channel}.html`);
+    await writeFile(oldPath, oldHtml);
+    const zone = '[ZoneTransfer]\r\nZoneId=4\r\nHostUrl=file:///\0';
+    if (process.platform === 'win32') await writeFile(`${oldPath}:Zone.Identifier`, zone);
+    const existingKey = await unlockConversation(envelope, passphrase);
+    const exact = 'Existing conversation 👋\r\ne\u0301\u200c فارسی';
+    const oldCover = encodeDialogue(await encryptBytesV2(existingKey, textToBytes(exact), 0));
+
+    await page.goto(fileUrl);
+    await page.locator('#open-saved').evaluate((node) => { node.open = true; });
+    await page.locator('#saved-file').setInputFiles({ name: 'invalid.html', mimeType: 'text/html', buffer: Buffer.from('<script>window.attachmentExecuted=true</script>') });
+    await page.locator('#open-file').click();
+    await page.locator('#error').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#unlock-panel').isHidden(), true);
+    await page.locator('#saved-file').setInputFiles(oldPath);
+    await page.locator('#open-file').click();
+    await page.locator('#unlock-panel').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#setup-panel').isHidden(), true);
+    await page.locator('#unlock-passphrase').fill('wrong passphrase');
+    await page.locator('#unlock').click();
+    await page.locator('#error').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#conversation').isHidden(), true);
+    await unlockFile(page);
+    assert.equal(await read(page, oldCover), exact);
+    await page.locator('#reply').click();
+    // A textarea normalizes CRLF at entry; the older encrypted message above
+    // must still preserve its original CRLF during decryption.
+    const reply = exact.replaceAll('\r\n', '\n') + ' reply';
+    const response = await write(page, reply, false);
+    assert.equal(bytesToText(await decryptBytes(existingKey, decodeMessageCover(response))), reply);
+    assert.equal(await page.evaluate(() => window.attachmentExecuted), undefined);
+    assert.equal(await readFile(oldPath, 'utf8'), oldHtml);
+    if (process.platform === 'win32') assert.equal(await readFile(`${oldPath}:Zone.Identifier`, 'utf8'), zone);
+    await page.reload();
+    await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#conversation').isHidden(), true);
+    assert.equal(await page.locator('#saved-file').inputValue(), '');
+    clean();
+  } finally { await browser.close(); }
+});
+
+test('a viewer without JavaScript sees a useful bilingual attachment limitation instead of only Opening', async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const context = await browser.newContext({ offline: true, javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto(fileUrl);
+    assert.equal(await page.locator('#capability').isVisible(), true);
+    assert.match(await page.locator('#capability').textContent(), /iPhone and iPad attachment previews are not supported/);
+    assert.equal(await page.locator('#setup-panel').isHidden(), true);
+    assert.equal(await page.locator('#unlock-panel').isHidden(), true);
+  } finally { await browser.close(); }
+});
 
 for (const channel of channels) test(`${channel}: real download, offline reopen, exact exchange, reply, Done and reload`, { timeout: 60_000 }, async () => {
   const browser = await chromium.launch({ channel, headless: true });

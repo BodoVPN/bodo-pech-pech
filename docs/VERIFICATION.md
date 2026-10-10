@@ -1,12 +1,22 @@
 # Simple private-file interface verification — 2026-10-10
 
-The generic 0.3 HTML is **92,490 bytes (90.3 KiB)**. SHA-256: `2df0b956ad700b7fe106761daa5b53a7c62abca0375b07c24a24849c642d5bb4`. Each private export adds exactly 76 ASCII bytes in the inert conversation metadata slot. The generic tracked file has no embedded conversation key. No model, runtime download, server or companion asset is needed.
+The generic 0.3 HTML is **402,605 bytes (393.2 KiB)**. SHA-256: `4e6f79b1ced161253b779646a66ee857a6a27d580495724b0e9a78736322a7ee`. Each private export adds exactly 76 ASCII bytes in the inert conversation metadata slot. The generic tracked file has no embedded conversation key. No model, runtime download, server or companion asset is needed.
 
 ## Fresh checks
 
 `npm run check` passed TypeScript, ESLint with zero warnings, **22 protocol tests and 11 browser tests**. No tests were skipped. Saved generic and downloaded private files were exercised under `file://` in Windows **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**, with networking disabled before loading. Observed pages emitted no HTTP requests, page errors or console errors.
 
-The crypto, v1 codec, v2 grammar tables, dialogue parser and byte packing source files are unchanged from `c859a3b`. Fresh protocol tests still cover frozen v1/v2 fixtures, independent Node AES fixtures, all 30 public profiles, arbitrary bytes and Unicode, size boundaries, normalization, malformed covers, wrong keys and mutations of authenticated packet bytes/profile/version.
+The crypto, v1 codec, v2 grammar tables, dialogue parser and byte packing source files are unchanged from `c859a3b`. The visual refinement also leaves `src/main.ts` and private-file generation logic unchanged from the approved 0.3 UX at `69c2357`. Fresh protocol tests still cover frozen v1/v2 fixtures, independent Node AES fixtures, all 30 public profiles, arbitrary bytes and Unicode, size boundaries, normalization, malformed covers, wrong keys and mutations of authenticated packet bytes/profile/version.
+
+## Typography and visual refinement
+
+Vazirmatn v33.003 is embedded as the unmodified official 111,152-byte variable WOFF2, with Persian/Arabic and Latin glyphs and weights 100–900. Its SHA-256 is `4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92`. Source, upstream commit, copyright and SIL OFL 1.1 are recorded in [font provenance](../assets/fonts/vazirmatn/README.md). Full attribution and license are carried inside an inert HTML template in generic/private copies. No installed-font lookup or CDN is used.
+
+Both browser flows now load the font offline and inspect Chromium's actual rendered glyph fonts via `CSS.getPlatformFontsForNode`, for Persian and English headings in both the starter and the downloaded private file. They require a loaded custom Vazirmatn face, rather than merely checking a declared CSS family. Private exports are checked for the copyright and full-license text. CSP adds only `font-src data:` while retaining the script/style hashes and no-network restrictions.
+
+The visual pass uses a 20px base size, variable weights, comfortable Persian line spacing, quiet charcoal primary actions, thin neutral borders and a small blue accent. Text inputs use one 2px focus outline with a neutral inner border. Calculated text contrast is 16.83:1 for body text, 6.07:1 for secondary copy, 5.56:1 for links/focus blue on white, 4.66:1 for footer text and 15.49:1 for primary button labels. These are selected color-pair checks, not a full accessibility audit.
+
+`scripts/capture-ui.mjs` captures 38 actual offline screenshots across Chrome and Edge at 1360×1040 and 390×844. Setup, download, home, writing, generated cover, reading and opened-message screens were reviewed alongside English, keyboard focus and 200% text enlargement. The home also reflows at 320px in the regression suite. No screens, controls, copy, action order or state transitions were added. No animation or heavy GPU effect is used. Private test keys are not shown; the displayed demonstration message is synthetic, and screenshots are kept outside Git.
 
 Browser flows cover:
 

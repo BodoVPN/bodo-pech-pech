@@ -36,7 +36,9 @@ AES-256-GCM, random nonces and authenticated format/profile headers are unchange
 
 ## Support and verification
 
-The self-contained file is about **90 KiB**, including the clean export template, CSS, script and grammar. Generic and private copies require no network requests or companion files. The existing messenger supplies transport and may require its own network.
+The self-contained file is about **393 KiB**, including the embedded Persian/Latin font, clean export template, CSS, script and grammar. Generic and private copies require no network requests or companion files. The existing messenger supplies transport and may require its own network.
+
+The minimal visual design uses Vazirmatn v33.003 by Saber Rastikerdar: an original variable WOFF2 from the [official project](https://github.com/rastikerdar/vazirmatn/tree/v33.003), including its Latin glyphs. The full SIL Open Font License 1.1 and copyright notice are embedded in the HTML and private exports. Font assets and provenance are in [assets/fonts/vazirmatn](assets/fonts/vazirmatn/README.md). Nothing is fetched from a font CDN, and no Apple font is redistributed. Only visuals changed: the approved actions, wording, order and behavior remain the same.
 
 Actual downloaded private files were reopened offline under `file://` in Windows **Chrome and Edge**, including exchange and reply between them. Tests cover separate conversation keys, clean exports, v1/v2 recovery, tampering, download/clipboard failures, clearing, reopening, narrow layouts and enlarged text. See [current verification](docs/VERIFICATION.md).
 
@@ -54,6 +56,8 @@ npm run check
 `npm run build` writes the committed generic `bodo-pech-pech.html`. Do not distribute unbundled `src/index.html`. There are no application runtime dependencies. Browser tests use installed Chrome and Edge; missing requested browsers fail. `BROWSER_CHANNELS=chrome` is available locally but does not replace a full run. Downloaded test files use disposable keys and are removed from an owned workspace scratch directory afterward. Never commit a personal keyed file.
 
 The build embeds an immutable empty UI shell. Private exports reuse that shell and the original bootstrap script, changing only one inert metadata key slot; they never serialize the live UI. Script/style hashes stay identical. The generic artifact contains no conversation key.
+
+`node scripts/capture-ui.mjs` creates offline Chrome/Edge screenshots of the saved generic and downloaded private file at desktop and phone widths, including English, keyboard focus and enlarged text. Its default output is ignored `work/ui-preview`; an explicit output directory may be passed. Only synthetic demonstration text is used, and temporary keyed files are deleted. Screenshots are review outputs, not committed product assets.
 
 `node scripts/compare.mjs` reproduces the **historical v1 versus v2 codec comparison** using both pinned artifacts from Git, not today's UI. Those measurements and covers remain in [VERIFICATION-V2.md](docs/VERIFICATION-V2.md); they are not fresh timing/memory measurements of 0.3. No new benchmark is claimed for the unchanged codec.
 

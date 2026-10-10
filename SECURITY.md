@@ -34,7 +34,7 @@ Done clears draft, received cover, decoded plaintext, outgoing cover and reply c
 
 This is not guaranteed memory erasure: JavaScript strings, DOM values, browser recovery data, swap, crash dumps, extensions, input methods, accessibility software, OS screenshots, and clipboard history are outside the app's control. Non-extractability does not stop a compromised page from using a key. Copying plaintext may expose it to clipboard synchronization. Clearing the page does not clear the clipboard or downloaded files.
 
-Do not use an untrusted HTML copy. Its content security policy blocks external resources and connections and permits only the bundled script/style hashes. This is defense in depth, not a signature: someone modifying the file can modify the policy too. Verify distributions through a trusted channel. There is no automatic updater.
+Do not use an untrusted HTML copy. Its content security policy blocks external resources and connections, permits only the bundled script/style hashes, and allows font data URLs for the embedded licensed WOFF2. `font-src data:` does not authorize remote font hosts; `connect-src 'none'` is unchanged. This is defense in depth, not a signature: someone modifying the file can modify the policy too. Verify distributions through a trusted channel. There is no automatic updater.
 
 ## Cover text
 

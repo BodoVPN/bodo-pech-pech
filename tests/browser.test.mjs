@@ -51,6 +51,28 @@ async function openFile(page, file) {
   assert.equal(await page.locator('#setup-panel').isHidden(), true);
   assert.equal(await page.locator('html').getAttribute('lang'), 'fa');
 }
+async function assertEmbeddedTypeface(page, selector) {
+  // CSS family declarations alone can silently fall back. Inspect the font
+  // actually used for the rendered glyphs in each language, while offline.
+  const session = await page.context().newCDPSession(page);
+  try {
+    await session.send('DOM.enable'); await session.send('CSS.enable');
+    for (const language of ['fa', 'en']) {
+      if (await page.locator('html').getAttribute('lang') !== language) await page.locator('#language').click();
+      const loaded = await page.evaluate(async () => {
+        const fonts = await document.fonts.load('600 20px "Vazirmatn"', 'پچ‌پچ Sample');
+        await document.fonts.ready;
+        return fonts.length > 0 && fonts.every((font) => font.status === 'loaded');
+      });
+      assert.equal(loaded, true, 'Bundled WOFF2 must load without a network');
+      const { root } = await session.send('DOM.getDocument', { depth: 0 });
+      const { nodeId } = await session.send('DOM.querySelector', { nodeId: root.nodeId, selector });
+      const { fonts } = await session.send('CSS.getPlatformFontsForNode', { nodeId });
+      assert.ok(fonts.length > 0 && fonts.every((font) => font.isCustomFont && font.glyphCount > 0 && font.familyName.startsWith('Vazirmatn')), 'Persian and Latin UI glyphs must use the embedded font, not an installed fallback');
+    }
+    await page.locator('#language').click();
+  } finally { await session.detach(); }
+}
 async function write(page, message, fromHome = true) {
   if (fromHome) await page.locator('#send-mode').click();
   await page.locator('#message').fill(message);
@@ -81,9 +103,12 @@ for (const channel of channels) test(`${channel}: real download, offline reopen,
     const alice = await aliceContext.newPage(); const bob = await bobContext.newPage();
     const cleanAlice = observe(alice); const cleanBob = observe(bob);
     const file = await createFile(alice);
+    await assertEmbeddedTypeface(alice, '#download-heading');
+    assert.ok(file.html.includes('SIL OPEN FONT LICENSE Version 1.1') && file.html.includes('Copyright 2015 The Vazirmatn Project Authors'), 'The redistributable private file must carry its font license');
     const repeat = await saveDownload(alice, () => alice.locator('#download').click());
     assert.ok(file.html === repeat.html, 'Download again must retain the same conversation');
     await openFile(alice, file); await openFile(bob, repeat);
+    await assertEmbeddedTypeface(alice, '#home-heading');
     const message = '\uFEFF  سلام 👋\ne\u0301 ي ك ‌ <img src=x onerror=alert(1)>  ';
     const cover = await write(alice, message);
     assert.equal(await read(bob, cover.replace(/ی/g, 'ي').replace(/ک/g, 'ك').replace(/ /g, '\n')), message);

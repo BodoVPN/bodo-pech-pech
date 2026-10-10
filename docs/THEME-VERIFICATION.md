@@ -1,25 +1,31 @@
-# BodoPechPech v0.4.3 UI verification — 2026-10-10
+# BodoPechPech v0.5.0 UI verification — 2026-10-10
 
-The header now includes a labeled **Light mode / Dark mode** button on setup, unlock, home, write, read and result screens, in both Persian and English. Its visible label and accessible name describe the destination mode. It works with pointer, touch, Enter and Space. It has a minimum 48px touch target and wraps with the language control beneath the brand on narrow screens.
+Every screen is rebuilt in React with genuine shadcn/ui Radix Nova components installed from the official registry using CLI 4.21.4. The interface uses Card, Field/FieldGroup, InputGroup, Input, Textarea, Button, Alert, Collapsible, Separator and Spinner components. Their shared sizing and neutral semantic color tokens support large controls and consistent Persian/English layouts. This replaces the former static markup and imperative screen controller.
 
-The initial theme follows `prefers-color-scheme`, including live OS changes until the user chooses a mode. An explicit choice stays for that page session and survives language changes, screen changes and later OS changes. Reload/close returns to the system default. No localStorage, sessionStorage, IndexedDB, cookie or other persistent preference is used. The immutable exported HTML does not inherit the current theme or live form values; its own control works on reopen.
+The persistent header has a labeled **Light mode / Dark mode** control on setup, download, unlock, home, writing, reading and results. Its label and accessible name describe the destination mode. The initial theme tracks the system until the user chooses; that choice lasts for the tab until reload/close, including later OS changes. No browser preference is stored. Theme/language changes preserve drafts, results and the unlocked session.
 
-Setup and unlock use one bordered password group with Show/Hide aligned inside it. Both controls stretch to equal height. Generate is a separate control with 16px of space below the field. Focus uses one 2px inset outline instead of a border plus detached outline. Message textareas use the same inset focus treatment. Persian/English direction, helper text, errors, grayscale colors and embedded Vazirmatn are preserved.
+Setup and unlock use one shadcn InputGroup with aligned Show/Hide controls. Password focus uses one visible 2px outline around the group; Show/Hide has its own keyboard focus indicator. Errors use a monochrome Alert and invalid Field/control semantics. Saved-file opening, legacy migration and help use keyboard-operable Radix disclosures. Buttons change color without animating geometry during text resizing.
 
-The self-contained HTML is **434,325 bytes (424.1 KiB)**, SHA-256 `d371ef63e39b1bb187364516b0adc82cbbb1bcea40e9d5e3712dba3e8a5d429b`. Password rules, generation, one-step unlock, conversation keys, message formats, Windows local reader and full-brand filenames are unchanged. Existing HTML files retain their embedded old UI; the current starter can read their protected conversation without changing the key.
+## Offline build and privacy boundaries
+
+Tailwind CSS v4 is compiled with PostCSS, and esbuild bundles production React, Radix primitives and Lucide icons into one HTML file. The font, CSS, JavaScript and third-party notices are embedded. The HTML is **808,806 bytes (789.8 KiB)**, SHA-256 `a316ddcf098942d0196a2fedc94b8d3ce61c7678804e92cd42a5ae93a7c0b303`.
+
+The build retains SHA-256 script/style CSP hashes, `connect-src 'none'`, and no `unsafe-inline` or `unsafe-eval` policy. Exports still use the immutable build-time shell. React owns screen/status state; passphrases and messages are uncontrolled fields/results, and keys and operation tokens stay in ephemeral refs. No secret state is serialized into exports or persistent storage.
+
+The crypto, codec, dialogue, packing, key-storage and personal-file modules are byte-for-byte unchanged from v0.4.3. v1/v2 reading, v2 writing, BPK1 protection, BPP1 migration, passphrase rules and full-brand private filenames are preserved. Async revision guards and the non-concurrent KDF latch survive edits, Done and page abandonment. Pagehide clears secrets and synchronously locks the UI before bfcache; reopening a downloaded file still starts locked. Clipboard denial and stale-result fallbacks remain covered.
+
+The local saved-file reader still reads bounded metadata as text without executing the selected attachment or modifying it. Existing saved HTML retains its embedded interface; use the latest starter's **Open saved conversation** to use the new UI with an old protected conversation and its original passphrase.
 
 ## Validation
 
-After `npm ci`, `npm run check` passed TypeScript, ESLint with zero warnings, **31 protocol/storage tests and 24 browser tests**, none skipped. Tests run in isolated Windows Chrome **155.0.8059.39** and Edge **156.0.4314.15**, offline in the application contexts.
+TypeScript, ESLint with zero warnings, **31 protocol/storage tests and 25 browser tests** pass with none skipped. Application browser contexts are offline in isolated Windows Chrome **155.0.8059.39** and Edge **156.0.4314.15**. The dependency audit reports zero vulnerabilities.
 
-- Real theme-button actions, keyboard operation, Persian/English labels, default system tracking, explicit override of later OS changes, reload reset and actual downloaded private-file reopening pass in both browsers.
-- Storage getters are forced to throw; the complete manual theme/message flow passes and records zero attempts to access storage. Context cookies remain empty.
-- Theme changes preserve a written draft, encoded cover, decoded exact message and unlocked key. Existing export-leak, protected-file, migration and cross-browser recovery tests pass.
-- The layout matrix checks setup, unlock, home, write, cover, read and message result in both themes/directions at **1360, 390, 360 and 320px**, with normal and **200% text**. It asserts no horizontal overflow or header overlap, readable control bounds, touch sizes, Show/Hide inside the password group, equal control heights, Generate spacing and the single focus outline. Long setup/unlock errors are included.
-- A separate **200% CSS zoom** probe checks the setup in both languages/themes at 1360px. This is browser-engine scaling, not a claim of physical-device or operating-system zoom testing.
-- Sixty-eight unedited screenshots cover the actual generic and saved private HTML across setup/focus/error, unlock, home, write, cover, read and result at desktop and 360px, plus the zoom probes. Representative screenshots from every screen were visually inspected. All capture data is synthetic; no user-provided screenshot or passphrase was copied into fixtures or the repository.
-- The six README screenshots were recaptured from this exact artifact. See [screenshot provenance](assets/README.md).
+- Actual downloads, repeat downloads, independent conversations, wrong-password recovery, exact Unicode messages, cross-browser replies, old protected attachments, legacy migration and reload/navigation lock behavior pass.
+- Export tampering checks, CRLF/CSP portability, rejected metadata, simulated download/allocation failure, KDF interruption/concurrency, and denied/stale clipboard operations pass.
+- Both browsers verify system/manual themes, keyboard controls, storage getters that throw, zero storage access, empty cookies, and preserved drafts/results when changing theme.
+- All screens reflow in both languages/themes at **1360, 390, 360 and 320px**, with normal and **200% text**. Assertions cover overflow, header overlap, touch targets, password alignment, focus, errors and spacing. Expanded saved-file, legacy and help disclosures also pass at 390/320px and 200% text using Enter/Space.
+- Separate 200% CSS zoom probes cover setup in both languages/themes. These test browser-engine scaling, not a physical device or operating-system zoom.
+- Seventy-six unedited screenshots cover setup/focus/errors, download, unlock, home, write, cover, read and message in both languages/themes at desktop and 360px, plus the zoom probes. Six README screenshots are refreshed from this exact HTML; see [provenance](assets/README.md). All capture files and credentials are synthetic.
+- Rendered custom-font glyph checks confirm embedded Vazirmatn for Persian and English. Selected normal text contrast is at least 4.5:1 and field border contrast at least 3:1. This is targeted validation, not a complete accessibility audit.
 
-All color tokens remain monochrome. Existing checks verify rendered embedded font glyphs, selected normal-text contrast of at least 4.5:1 and field-border contrast of at least 3:1. This is targeted validation, not a complete accessibility audit.
-
-No user Chrome windows were controlled. iOS/Telegram attachment opening is still unresolved and Android hardware remains unverified. No hosting, installation, AI, emulator attempt or change to platform security settings was introduced. See [platform limitations](OPENING-FILES.md).
+No user Chrome windows or personal private files were controlled or modified. iOS/Telegram attachment opening remains unsupported/unresolved, and Android hardware remains unverified. No hosting, installation, AI, emulator retry or platform-security change was introduced. See [platform limitations](OPENING-FILES.md).

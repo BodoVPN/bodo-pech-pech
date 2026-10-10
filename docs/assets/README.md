@@ -1,14 +1,14 @@
 # README screenshots
 
-These are unedited page screenshots of **BodoPechPech v0.4.3**, captured on 2026-10-10 in Windows Chrome 155.0.8059.39 with networking disabled. The captured HTML has SHA-256 `d371ef63e39b1bb187364516b0adc82cbbb1bcea40e9d5e3712dba3e8a5d429b`. Earlier releases keep their original appearance and binaries. There is no browser chrome, personal tab content, visible password, conversation key, clipboard content or message text in the images.
+These are unedited page screenshots of **BodoPechPech v0.5.0**, captured on 2026-10-10 in Windows Chrome 155.0.8059.39 with networking disabled. The captured HTML has SHA-256 `a316ddcf098942d0196a2fedc94b8d3ce61c7678804e92cd42a5ae93a7c0b303`. Earlier releases keep their original appearance and binaries. There is no browser chrome, personal tab content, visible password, conversation key, clipboard content or message text in the images.
 
-| Image | Actual state | Viewport |
+| Image | Actual state | Viewport (full-page capture) |
 | --- | --- | --- |
 | `home-fa-light.png`, `home-fa-dark.png` | Unlocked Persian Write/Read home | 960 × 760 |
 | `unlock-en-light.png`, `unlock-en-dark.png` | English unlock screen, empty field | 390 × 720 |
 | `home-en-light.png`, `home-en-dark.png` | Unlocked English Write/Read home | 390 × 720 |
 
-Private files used for capture were generated using the app's own Generate/save flow with disposable random credentials, then deleted. No app controls or pixels were altered for screenshots. The header's theme button and grouped password controls are part of the actual saved HTML.
+Private files used for capture were generated using the app's own Generate/save flow with disposable random credentials, then deleted. No app controls or pixels were altered for screenshots. The React/shadcn interface, header theme button and grouped password controls are part of the actual saved HTML.
 
 Narrow screenshots are desktop browser views, **not Android validation**. Font pixels come from the app's embedded, licensed Vazirmatn face; see [font provenance](../../assets/fonts/vazirmatn/README.md).
 

@@ -18,9 +18,9 @@
 <p align="center">
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/home-fa-dark.png"><img src="docs/assets/home-fa-light.png" width="800" alt="BodoPechPech in Persian after unlocking: the full بدو پچ پچ wordmark, paired-conversation icon, and Write a message and Read a message buttons."></picture>
 </p>
-<p align="center"><sub>BodoPechPech v0.4.3, offline in Windows Chrome. Switch light/dark from the header on any screen. No message content is shown.</sub></p>
+<p align="center"><sub>BodoPechPech v0.5.0, offline in Windows Chrome. Switch light/dark from the header on any screen. No message content is shown.</sub></p>
 
-**[v0.4.3](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.4.3)** adds a visible light/dark button and fixes password-field alignment, spacing and focus. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
+**[v0.5.0](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.5.0)** rebuilds every screen with React and genuine shadcn/ui components: a consistent monochrome theme, clear forms, large controls, and Persian/English layouts. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
 
 ## Quick start
 
@@ -199,7 +199,7 @@ The connection to Persian phrase encoding is the **choice of carrier**: language
 
 For a **password-protected file**, choose **Open saved conversation** in the starter, select the file, and enter its existing password. The saved file and original conversation key stay unchanged.
 
-Saved HTML files contain their own app version. To use the new theme button with an existing conversation, open the latest public starter and select your old private file there. Do not create a new conversation to upgrade the interface.
+Saved HTML files contain their own app version. To use the rebuilt interface with an existing conversation, open the latest public starter and select your old private file there. Do not create a new conversation to upgrade the interface.
 
 For an **older unprotected file**, choose a password in the starter, open **Protect an older conversation**, and select the old private HTML file **or** paste its BPP1 setup code. Save the protected copy. It keeps the original key and reads existing v1/v2 messages; old HTML is read as data, never executed.
 
@@ -213,7 +213,7 @@ Existing protected files still accept their original passwords, even if they do 
 | **Android / Galaxy A51-class phones** | Target platform; **not verified on a real device**. |
 | **iPhone / iPad, including Telegram attachments** | **Unsupported attachment-opening route; no working iOS path verified.** A preview is not an interactive browser. |
 
-The current single file is about **424 KiB**, with its font, CSS and script embedded. See [current UI verification](docs/THEME-VERIFICATION.md), [opening help and iOS findings](docs/OPENING-FILES.md), [Windows opening verification](docs/OPENING-VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
+The current single file is about **790 KiB**, with its font, CSS and script embedded. See [current UI verification](docs/THEME-VERIFICATION.md), [opening help and iOS findings](docs/OPENING-FILES.md), [Windows opening verification](docs/OPENING-VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
 
 ## Build and check
 
@@ -224,6 +224,8 @@ npm ci
 npm run check
 ```
 
+The UI uses React 19 and [shadcn/ui](https://ui.shadcn.com/) Radix Nova components installed through the official CLI. Shared semantic tokens define both monochrome themes; Vazirmatn is embedded. Tailwind v4 compiles during the build and esbuild bundles production React into the HTML. No framework assets are fetched at runtime.
+
 `npm run build` produces `bodo-pech-pech.html`; do not distribute the unbundled source page. Browser checks use installed Chrome and Edge. Keep personal conversation files out of Git.
 
 | Explore | Read more |
@@ -232,4 +234,4 @@ npm run check
 | Evidence | [Current UI verification](docs/THEME-VERIFICATION.md) · [Windows opening verification](docs/OPENING-VERIFICATION.md) · [Opening help](docs/OPENING-FILES.md) · [Historical codec comparison](docs/VERIFICATION-V2.md) |
 | Visuals | [Screenshot provenance](docs/assets/README.md) · [Font attribution](assets/fonts/vazirmatn/README.md) |
 
-Typography uses **Vazirmatn v33.003**, embedded with its SIL Open Font License 1.1 and attribution. No project software license has been selected. No AI is shipped; the [earlier model investigation](docs/MODEL-NOTE.md) is historical only.
+Typography uses **Vazirmatn v33.003**, embedded with its SIL Open Font License 1.1 and attribution. Bundled third-party UI licenses are included in the HTML and [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt). No project software license has been selected. No AI is shipped; the [earlier model investigation](docs/MODEL-NOTE.md) is historical only.

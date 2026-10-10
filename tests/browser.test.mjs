@@ -47,7 +47,7 @@ async function createFile(page, code) {
   await page.locator('#setup-panel').waitFor({ state: 'visible' });
   await page.locator('#setup-passphrase').fill(passphrase);
   if (code) {
-    await page.locator('#legacy-setup').evaluate((node) => { node.open = true; });
+    await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-code').fill(code);
   }
   return saveDownload(page, () => page.locator(code ? '#import' : '#generate').click());
@@ -129,7 +129,7 @@ for (const channel of channels) test(`${channel}: locally read an old protected 
     const oldCover = encodeDialogue(await encryptBytesV2(existingKey, textToBytes(exact), 0));
 
     await page.goto(fileUrl);
-    await page.locator('#open-saved').evaluate((node) => { node.open = true; });
+    await page.locator('#open-saved-trigger').click();
     await page.locator('#saved-file').setInputFiles({ name: 'invalid.html', mimeType: 'text/html', buffer: Buffer.from('<script>window.attachmentExecuted=true</script>') });
     await page.locator('#open-file').click();
     await page.locator('#error').waitFor({ state: 'visible' });
@@ -275,7 +275,7 @@ test('legacy code import keeps v1/v2 recovery; tampering and invalid setup fail 
     }
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
     await page.locator('#setup-passphrase').fill(passphrase);
-    await page.locator('#legacy-setup').evaluate((node) => { node.open = true; });
+    await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-code').fill('BPP1-"><script>alert(1)</script>'); await page.locator('#import').click();
     await page.locator('#error').waitFor({ state: 'visible' });
     assert.equal(await page.locator('#download-panel').isHidden(), true);
@@ -385,7 +385,7 @@ test('unsupported browser and CRLF copies fail safely or preserve hashed CSP', {
     const file = await createFile(page);
     const crlf = resolve(directory, 'crlf-private.html'); await writeFile(crlf, file.html.replace(/\r?\n/g, '\r\n'));
     await openFile(page, { url: pathToFileURL(crlf).href });
-    assert.equal(await page.locator('.choices').evaluate((node) => getComputedStyle(node).display), 'grid'); clean();
+    assert.equal(await page.locator('#home [data-slot=card-content]').evaluate((node) => getComputedStyle(node).display), 'grid'); clean();
     const unsupported = await context.newPage();
     await unsupported.addInitScript(() => Object.defineProperty(globalThis, 'isSecureContext', { value: false }));
     await unsupported.goto(fileUrl); await unsupported.locator('#error').waitFor({ state: 'visible' });
@@ -499,7 +499,7 @@ test('legacy HTML is imported only as data; original messages survive and no raw
       .replace('<body>', '<body><script>globalThis.legacyExecuted=true</script><img src="https://invalid.example/should-not-load">');
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
     await page.locator('#setup-passphrase').fill(passphrase);
-    await page.locator('#legacy-setup').evaluate((node) => { node.open = true; });
+    await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-file').setInputFiles({ name: 'old-private.html', mimeType: 'text/html', buffer: Buffer.from(old) });
     const file = await saveDownload(page, () => page.locator('#import').click());
     assert.ok(!file.html.includes(code) && !file.html.includes(code.slice(4, 68)) && !file.html.includes(passphrase));
@@ -578,11 +578,11 @@ test('all screens reflow in both themes and directions; password controls stay a
         for (const child of [input, show]) assert.ok(child.x >= group.x && child.right <= group.right + 0.5 && child.y >= group.y && child.bottom <= group.bottom + 0.5, 'Input and Show/Hide stay within one field');
         assert.ok(input.width >= 48 && show.width >= 48 && show.height >= 48);
         assert.ok(input.right <= show.x + 0.5 || show.right <= input.x + 0.5);
-        assert.ok(Math.abs(input.height - show.height) < 1, 'Field controls have equal heights');
+        assert.ok(Math.abs(input.height - show.height) < 1, `Field controls have equal heights: ${JSON.stringify(geometry.password)}`);
         if (geometry.generator) assert.ok(geometry.generator.y - group.bottom >= 15.5, 'Generate has at least 16px breathing room');
         await page.locator(`#${prefix}-passphrase`).focus();
         const focus = await page.locator(`#${prefix}-passphrase`).evaluate(node => ({ input: getComputedStyle(node).outlineStyle, border: getComputedStyle(node).borderTopWidth, group: getComputedStyle(node.parentElement).outlineWidth, offset: getComputedStyle(node.parentElement).outlineOffset }));
-        assert.deepEqual(focus, { input: 'none', border: '0px', group: '2px', offset: '-2px' });
+        assert.deepEqual(focus, { input: 'none', border: '0px', group: '2px', offset: '3px' });
       }
     };
     const matrix = async (prefix) => {
@@ -616,11 +616,11 @@ test('all screens reflow in both themes and directions; password controls stay a
     }
     await unlockFile(page); await matrix();
     await page.locator('#send-mode').click();
-    assert.equal(await page.locator('#message').evaluate(node => getComputedStyle(node).outlineOffset), '-2px');
+    assert.equal(await page.locator('#message').evaluate(node => getComputedStyle(node).outlineOffset), '4px');
     await matrix();
     const cover = await write(page, 'Synthetic layout message 👋', false); await matrix();
     await page.locator('#clear').click(); await page.locator('#receive-mode').click();
-    assert.equal(await page.locator('#received').evaluate(node => getComputedStyle(node).outlineOffset), '-2px');
+    assert.equal(await page.locator('#received').evaluate(node => getComputedStyle(node).outlineOffset), '4px');
     await matrix();
     assert.equal(await read(page, cover, false), 'Synthetic layout message 👋'); await matrix();
   } finally { await browser.close(); }
@@ -635,7 +635,7 @@ test('Generate only fills the editable setup field, preserves legacy selection a
     let downloads = 0; page.on('download', () => { downloads++; });
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
     await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { globalThis.unwantedCopy = true; } } }));
-    await page.locator('#legacy-setup').evaluate((node) => { node.open = true; });
+    await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-code').fill(pair.code);
     await page.locator('#import-file').setInputFiles({ name: 'old-private.html', mimeType: 'text/html', buffer: Buffer.from(old) });
     await page.locator('#generate-passphrase').click();
@@ -669,12 +669,12 @@ for (const channel of channels) test(`${channel}: monochrome brand and live syst
     const colors = await page.evaluate(() => {
       const styles = (selector) => getComputedStyle(document.querySelector(selector));
       return {
-        page: styles('html').backgroundColor, surface: styles('main').backgroundColor,
-        ink: styles('h1').color, muted: styles('.hint').color,
+        page: styles('html').backgroundColor, surface: styles('#setup-controls').backgroundColor,
+        ink: styles('h1').color, muted: styles('[data-slot=field-description]').color,
         primary: styles('#generate').backgroundColor, primaryInk: styles('#generate').color,
         fieldLine: styles('#setup-form .password-field').borderColor, field: styles('#setup-form .password-field').backgroundColor,
         error: styles('#error').color, errorSurface: styles('#error').backgroundColor,
-        focus: styles('html').getPropertyValue('--focus').trim(),
+        focus: styles('html').getPropertyValue('--ring').trim(),
       };
     });
     for (const [name, value] of Object.entries(colors)) {
@@ -699,7 +699,7 @@ for (const channel of channels) test(`${channel}: monochrome brand and live syst
       assert.equal(await page.locator('#setup-form .password-field').evaluate((node) => getComputedStyle(node).outlineWidth), '2px');
       await page.locator('#generate').click(); await page.locator('#error').waitFor({ state: 'visible' });
       assert.equal(await page.locator('#error').getAttribute('role'), 'alert');
-      assert.equal(await page.locator('#error').evaluate((node) => getComputedStyle(node).borderInlineStartWidth), '4px');
+      assert.equal(await page.locator('#error').evaluate((node) => getComputedStyle(node).borderInlineStartWidth), '2px');
       const file = await createFile(page);
       assert.ok(file.html.includes('prefers-color-scheme: dark'));
       await page.goto(file.url); await page.locator('#unlock-panel').waitFor({ state: 'visible' });
@@ -784,6 +784,37 @@ for (const channel of channels) test(`${channel}: manual theme works offline on 
     assert.equal(await page.locator('#conversation').isHidden(), true);
     assert.equal(await page.locator('#unlock-passphrase').inputValue(), '');
     assert.deepEqual(await context.cookies(), []);
+    clean();
+  } finally { await browser.close(); }
+});
+
+test('shadcn disclosures remain keyboard-operable and reflow with enlarged text in both directions', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true })).newPage(); const clean = observe(page);
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    for (const id of ['open-saved', 'legacy-setup', 'about']) {
+      const trigger = page.locator(`#${id}-trigger`);
+      await trigger.focus(); await page.keyboard.press('Enter');
+      assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+      await trigger.press('Space'); assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+      await trigger.press('Enter');
+    }
+    for (const theme of ['light', 'dark']) {
+      if (await page.locator('html').getAttribute('data-theme') !== theme) await page.locator('#theme').click();
+      for (const language of ['fa', 'en']) {
+        if (await page.locator('html').getAttribute('lang') !== language) await page.locator('#language').click();
+        for (const width of [390, 320]) for (const textSize of ['20px', '40px']) {
+          await page.setViewportSize({ width, height: 900 });
+          await page.locator('html').evaluate((node, size) => { node.style.fontSize = size; }, textSize);
+          assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+          for (const id of ['saved-file', 'import-file', 'import-code', 'open-file', 'import']) {
+            const box = await page.locator(`#${id}`).boundingBox();
+            assert.ok(box && box.x >= 0 && box.x + box.width <= width && box.height >= 48, `${id} stays usable`);
+          }
+        }
+      }
+    }
     clean();
   } finally { await browser.close(); }
 });

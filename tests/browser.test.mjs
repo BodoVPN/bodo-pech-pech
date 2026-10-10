@@ -1,237 +1,326 @@
 import assert from 'node:assert/strict';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { chromium } from 'playwright';
-import { encryptBytes, importPair, textToBytes } from '../src/crypto.ts';
+import { createPair, encryptBytes, encryptBytesV2, importPair, textToBytes } from '../src/crypto.ts';
 import { encodeCover } from '../src/codec.ts';
-import { PROFILE_OPENERS } from '../src/dialogue-data.ts';
+import { decodeMessageCover, encodeDialogue } from '../src/dialogue.ts';
 
 const fileUrl = pathToFileURL(resolve('bodo-pech-pech.html')).href;
 const channels = (process.env.BROWSER_CHANNELS || 'chrome,msedge').split(',');
+const testRoot = resolve('../../work/pech-pech-tests');
+await mkdir(testRoot, { recursive: true });
+await mkdir('test-results', { recursive: true });
+const directory = await mkdtemp(resolve(testRoot, 'run-'));
+let fileNumber = 0;
+after(async () => {
+  if (dirname(directory) !== testRoot) throw new Error('Refusing cleanup outside the owned test directory');
+  await rm(directory, { recursive: true, force: true });
+});
+function observe(page) {
+  const problems = [];
+  page.on('pageerror', (error) => problems.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') problems.push(message.text()); });
+  page.on('request', (request) => { if (/^https?:/.test(request.url())) problems.push('Unexpected HTTP request'); });
+  return () => assert.deepEqual(problems, []);
+}
+async function saveDownload(page, trigger) {
+  const pending = page.waitForEvent('download');
+  await trigger();
+  const download = await pending;
+  const path = resolve(directory, `private-test-${++fileNumber}.html`);
+  await download.saveAs(path);
+  assert.equal(await download.failure(), null);
+  assert.match(download.suggestedFilename(), /^pech-pech-private-[a-f0-9]{8}\.html$/);
+  return { path, url: pathToFileURL(path).href, html: await readFile(path, 'utf8') };
+}
+async function createFile(page, code) {
+  await page.goto(fileUrl);
+  await page.locator('#setup-panel').waitFor({ state: 'visible' });
+  if (code) {
+    await page.locator('#legacy-setup').evaluate((node) => { node.open = true; });
+    await page.locator('#import-code').fill(code);
+  }
+  return saveDownload(page, () => page.locator(code ? '#import' : '#generate').click());
+}
+async function openFile(page, file) {
+  await page.goto(file.url);
+  await page.locator('#conversation').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#setup-panel').isHidden(), true);
+  assert.equal(await page.locator('html').getAttribute('lang'), 'fa');
+}
+async function write(page, message, fromHome = true) {
+  if (fromHome) await page.locator('#send-mode').click();
+  await page.locator('#message').fill(message);
+  await page.locator('#encrypt').click();
+  await page.locator('#cover-result').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#send-form').isHidden(), true);
+  return page.locator('#cover').inputValue();
+}
+async function read(page, cover, fromHome = true) {
+  if (fromHome) await page.locator('#receive-mode').click();
+  await page.locator('#received').fill(cover);
+  await page.locator('#decrypt').click();
+  await page.locator('#plain-result').waitFor({ state: 'visible' });
+  return page.locator('#plaintext').textContent();
+}
+function codeOf(file) {
+  const code = /<meta name="bpp-conversation" content="(BPP1[A-F0-9]{72})">/.exec(file.html)?.[1];
+  assert.ok(code, 'A private download contains one valid restricted-format key slot');
+  return code;
+}
 
-test('clearing during encryption cannot restore a key or message when it finishes', { timeout: 30_000 }, async () => {
-  const browser = await chromium.launch({ channel: channels[0], headless: true });
+for (const channel of channels) test(`${channel}: real download, offline reopen, exact exchange, reply, Done and reload`, { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ channel, headless: true });
   try {
-    const page = await browser.newPage();
-    await page.goto(fileUrl);
-    await newPair(page);
-    // Delay the real browser crypto result to exercise session cancellation.
-    await page.evaluate(() => {
-      const nativeEncrypt = crypto.subtle.encrypt.bind(crypto.subtle);
-      crypto.subtle.encrypt = async (...args) => {
-        const encrypted = await nativeEncrypt(...args);
-        await new Promise((release) => { globalThis.releaseEncryption = release; });
-        return encrypted;
-      };
-    });
-    await page.locator('#message').fill('must disappear');
-    await page.locator('#encrypt').click();
-    await page.waitForFunction(() => !!globalThis.releaseEncryption);
-    await page.locator('#clear').click();
-    await page.evaluate(async () => {
-      globalThis.releaseEncryption();
-      await new Promise((done) => setTimeout(done, 0));
-    });
-    assert.equal(await page.locator('#cover-result').isHidden(), true);
-    assert.equal(await page.locator('#cover').inputValue(), '');
-    assert.equal(await page.locator('#message').inputValue(), '');
-    assert.equal(await page.locator('#pair-state').textContent(), 'Not connected');
-    assert.equal(await page.locator('#encrypt').isDisabled(), true);
+    console.log(`${channel} ${browser.version()}: offline downloaded-file flow`);
+    const aliceContext = await browser.newContext({ offline: true });
+    const bobContext = await browser.newContext({ offline: true });
+    const alice = await aliceContext.newPage(); const bob = await bobContext.newPage();
+    const cleanAlice = observe(alice); const cleanBob = observe(bob);
+    const file = await createFile(alice);
+    const repeat = await saveDownload(alice, () => alice.locator('#download').click());
+    assert.ok(file.html === repeat.html, 'Download again must retain the same conversation');
+    await openFile(alice, file); await openFile(bob, repeat);
+    const message = '\uFEFF  سلام 👋\ne\u0301 ي ك ‌ <img src=x onerror=alert(1)>  ';
+    const cover = await write(alice, message);
+    assert.equal(await read(bob, cover.replace(/ی/g, 'ي').replace(/ک/g, 'ك').replace(/ /g, '\n')), message);
+    assert.equal(await bob.locator('#plaintext img').count(), 0);
+    assert.equal(await bob.evaluate(() => document.activeElement.id), 'plain-heading');
+    await bob.locator('#reply').click();
+    const reply = await write(bob, 'باشه، منتظرم.', false);
+    assert.equal(decodeMessageCover(reply)[4], Math.floor(decodeMessageCover(cover)[4] / 5) * 5);
+    await alice.locator('#clear').click();
+    assert.equal(await read(alice, reply), 'باشه، منتظرم.');
+    await alice.locator('#clear').click();
+    assert.equal(await alice.locator('#message').inputValue(), '');
+    assert.equal(await alice.locator('#received').inputValue(), '');
+    assert.equal(await alice.locator('#cover').inputValue(), '');
+    assert.equal(await alice.locator('#plaintext').textContent(), '');
+    assert.equal(await alice.evaluate(() => document.activeElement.id), 'home-heading');
+    await alice.reload();
+    await alice.locator('#conversation').waitFor({ state: 'visible' });
+    assert.equal(await read(alice, reply), 'باشه، منتظرم.');
+    await alice.close();
+    const reopened = await aliceContext.newPage();
+    const cleanReopened = observe(reopened);
+    await openFile(reopened, file);
+    assert.equal(await read(reopened, cover), message);
+    for (const page of [reopened, bob]) {
+      assert.equal(await page.evaluate(() => navigator.onLine), false);
+      assert.deepEqual(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie]), [0, 0, '']);
+    }
+    cleanAlice(); cleanBob(); cleanReopened();
   } finally { await browser.close(); }
 });
 
-async function newPair(page, code) {
-  await page.waitForFunction(() => !document.querySelector('#generate').disabled);
-  if (code) {
-    await page.locator('#import-code').fill(code);
-    await page.locator('#import').click();
-  } else await page.locator('#generate').click();
-  await page.locator('#verify-panel').waitFor({ state: 'visible' });
-  const createdCode = await page.locator('#setup-code').inputValue();
-  const fingerprint = await page.locator('#fingerprint').textContent();
-  assert.equal(await page.locator('#encrypt').isDisabled(), true);
-  await page.locator('#verified').check();
-  await page.locator('#confirm').click();
-  assert.equal(await page.locator('#setup-code').inputValue(), '');
-  assert.equal(await page.locator('#import-code').inputValue(), '');
-  return { code: createdCode || code, fingerprint };
-}
+test('exports use the immutable shell; generic artifact has no key; conversations are independent', { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const context = await browser.newContext({ offline: true }); const page = await context.newPage(); const clean = observe(page);
+    const generic = await readFile('bodo-pech-pech.html', 'utf8');
+    assert.equal(/BPP1[A-F0-9]{72}/.test(generic), false);
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    await page.evaluate(() => {
+      for (const id of ['message', 'received', 'cover', 'plaintext']) document.getElementById(id).textContent = 'TRANSIENT-DO-NOT-EXPORT-73519';
+      document.getElementById('message').value = 'TRANSIENT-DRAFT-73519';
+      const node = document.createElement('div'); node.textContent = 'OTHER-CONTACT-73519'; document.body.append(node);
+    });
+    const first = await saveDownload(page, () => page.locator('#generate').click());
+    assert.equal(first.html.includes('73519'), false);
+    // Apart from the single inert key slot the export must be byte-for-byte the known build.
+    assert.ok(first.html.replace(codeOf(first), '') === generic);
+    const second = await createFile(page);
+    assert.ok(codeOf(first) !== codeOf(second), 'A new setup must create a fresh random conversation');
+    await openFile(page, first);
+    const cover = await write(page, 'conversation A');
+    await openFile(page, second);
+    await page.locator('#receive-mode').click(); await page.locator('#received').fill(cover); await page.locator('#decrypt').click();
+    await page.locator('#error').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#plain-result').isHidden(), true);
+    assert.equal(await page.locator('#plaintext').textContent(), '');
+    clean();
+  } finally { await browser.close(); }
+});
 
-for (const channel of channels) {
-  test(`${channel}: two isolated peers work from file:// while offline`, { timeout: 60_000 }, async () => {
-    const browser = await chromium.launch({ channel, headless: true });
-    try {
-      console.log(`${channel} ${browser.version()}: ${fileUrl}`);
-      const aliceContext = await browser.newContext({ viewport: { width: 1440, height: 1050 } });
-      const bobContext = await browser.newContext();
-      await aliceContext.setOffline(true);
-      await bobContext.setOffline(true);
-      const alice = await aliceContext.newPage();
-      const bob = await bobContext.newPage();
-      const errors = [];
-      const network = [];
-      for (const page of [alice, bob]) {
-        page.on('pageerror', (error) => errors.push(error.message));
-        page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
-        page.on('request', (request) => { if (/^https?:/.test(request.url())) network.push(request.url()); });
-        await page.goto(fileUrl);
-        assert.equal(await page.evaluate(() => location.protocol), 'file:');
-        assert.equal(await page.evaluate(() => isSecureContext && !!crypto.subtle), true);
-        assert.equal(await page.evaluate(() => navigator.onLine), false);
-      }
-      const first = await newPair(alice);
-      const second = await newPair(bob, first.code);
-      assert.equal(first.fingerprint, second.fingerprint);
-      const legacyPair = await importPair(first.code);
-      const legacyCover = encodeCover(await encryptBytes(legacyPair.key, textToBytes('پیام قدیمی 👋\r\n'), 1));
-      await bob.locator('#receive-mode').click();
-      await bob.locator('#received').fill(legacyCover);
-      await bob.locator('#decrypt').click();
-      await bob.locator('#plain-result').waitFor({ state: 'visible' });
-      assert.equal(await bob.locator('#plaintext').textContent(), 'پیام قدیمی 👋\r\n');
-      const message = '\uFEFF  سلام 👋\nمی‌خواهم دقیق بماند. e\u0301\n<img src=x onerror=alert(1)>  ';
-      await alice.locator('#message').fill(message);
-      await alice.locator('#context-details').evaluate((details) => { details.open = true; });
-      await alice.locator('#context').fill('چای و کیک چطوره؟');
-      await alice.locator('#encrypt').click();
-      await alice.locator('#cover-result').waitFor({ state: 'visible' });
-      const cover = await alice.locator('#cover').inputValue();
-      assert.ok(PROFILE_OPENERS[8].some((opener) => cover.startsWith(opener)));
-      assert.match(await alice.locator('#cover-stats').textContent(), /Tea and a snack.*Respond to a question/);
-      assert.ok(!cover.includes('onerror'));
-      await alice.locator('#copy-cover').click();
-      await alice.waitForFunction(() => /Copied|selected/.test(document.querySelector('#feedback').textContent));
-      await bob.locator('#receive-mode').click();
-      const pastedCover = cover.replace(/ی/g, 'ي').replace(/ک/g, 'ك').replace(/ /g, '\n');
-      await bob.locator('#received').fill(pastedCover);
-      await bob.locator('#decrypt').click();
-      await bob.locator('#plain-result').waitFor({ state: 'visible' });
-      assert.equal(await bob.locator('#plaintext').textContent(), message);
-      assert.equal(await bob.locator('#plaintext img').count(), 0);
-      await bob.locator('#reply').click();
-      assert.equal(await bob.locator('#context').inputValue(), pastedCover);
-      await bob.locator('#message').fill('حتما، تا بعد 👋');
-      await bob.locator('#encrypt').click();
-      await bob.locator('#cover-result').waitFor({ state: 'visible' });
-      const reply = await bob.locator('#cover').inputValue();
-      assert.ok(PROFILE_OPENERS[5].some((opener) => reply.startsWith(opener)));
-      await alice.locator('#receive-mode').click();
-      await alice.locator('#received').fill(reply);
-      await alice.locator('#decrypt').click();
-      await alice.locator('#plain-result').waitFor({ state: 'visible' });
-      assert.equal(await alice.locator('#plaintext').textContent(), 'حتما، تا بعد 👋');
-      await alice.locator('#received').fill(reply.slice(0, -20));
-      assert.equal(await alice.locator('#plaintext').textContent(), '');
-      await alice.locator('#decrypt').click();
-      await alice.locator('#error').waitFor({ state: 'visible' });
-      assert.equal(await alice.locator('#plain-result').isHidden(), true);
-      // Replacing the pair invalidates a previously valid message.
-      await bob.locator('#clear').click();
-      await newPair(bob);
-      await bob.locator('#receive-mode').click();
-      await bob.locator('#received').fill(cover);
-      await bob.locator('#decrypt').click();
-      await bob.locator('#error').waitFor({ state: 'visible' });
-      assert.match(await bob.locator('#error').textContent(), /Authentication failed/);
-      assert.equal(await bob.locator('#plaintext').textContent(), '');
-      // Current result must disappear as soon as its source changes.
-      await alice.locator('#send-mode').click();
-      await alice.locator('#message').fill('A changed draft');
-      assert.equal(await alice.locator('#cover').inputValue(), '');
-      await alice.locator('#encrypt').click();
-      await alice.locator('#cover-result').waitFor({ state: 'visible' });
-      await alice.locator('#context-details').evaluate((details) => { details.open = true; });
-      await alice.locator('#act').selectOption('4');
-      assert.equal(await alice.locator('#cover').inputValue(), '');
-      await alice.locator('#encrypt').click();
-      await alice.locator('#cover-result').waitFor({ state: 'visible' });
-      assert.match(await alice.locator('#cover-stats').textContent(), /Acknowledge/);
-      await mkdir('test-results', { recursive: true });
-      await alice.screenshot({ path: `test-results/${channel}-desktop.png`, fullPage: true });
-      await alice.setViewportSize({ width: 390, height: 844 });
-      assert.equal(await alice.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-      await alice.screenshot({ path: `test-results/${channel}-mobile-width.png`, fullPage: true });
-      await alice.locator('#clear').click();
-      assert.equal(await alice.locator('#message').inputValue(), '');
-      assert.equal(await alice.locator('#context').inputValue(), '');
-      assert.equal(await alice.locator('#cover').inputValue(), '');
-      assert.equal(await alice.locator('#received').inputValue(), '');
-      assert.equal(await alice.locator('#encrypt').isDisabled(), true);
-      await alice.reload();
-      await alice.waitForFunction(() => !document.querySelector('#generate').disabled);
-      assert.equal(await alice.locator('#pair-state').textContent(), 'Not connected');
-      assert.equal(await alice.evaluate(() => localStorage.length + sessionStorage.length), 0);
-      assert.deepEqual(network, []);
-      assert.deepEqual(errors, []);
-      console.log(`${channel}: offline load, setup, Unicode exchange, reply, copy, wrong-key rejection, truncation, clear/reload and mobile width passed; 0 HTTP requests.`);
-    } finally { await browser.close(); }
-  });
-}
+test('legacy code import keeps v1/v2 recovery; tampering and invalid setup fail closed', { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true })).newPage(); const clean = observe(page);
+    const pair = await createPair(); const file = await createFile(page, pair.code);
+    await openFile(page, file);
+    const legacy = encodeCover(await encryptBytes(pair.key, textToBytes('پیام قدیمی\r\n👋'), 1));
+    assert.equal(await read(page, legacy), 'پیام قدیمی\r\n👋');
+    await page.locator('#reply').click();
+    const reply = await write(page, 'پاسخ', false);
+    assert.equal(Math.floor(decodeMessageCover(reply)[4] / 5), 1);
+    const packet = await encryptBytesV2(pair.key, textToBytes('existing v2'), 8);
+    await page.locator('#clear').click();
+    assert.equal(await read(page, encodeDialogue(packet)), 'existing v2');
+    for (const malformed of [encodeDialogue(packet).slice(0, -35), 'not a cover', encodeDialogue(Uint8Array.from(packet, (byte, index) => index === 20 ? byte ^ 1 : byte))]) {
+      await page.locator('#read-another').click();
+      await page.locator('#received').fill(malformed); await page.locator('#decrypt').click();
+      await page.locator('#error').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('#plaintext').textContent(), '');
+      // Return to a successful result to exercise clearing stale plaintext again.
+      assert.equal(await read(page, encodeDialogue(packet), false), 'existing v2');
+    }
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    await page.locator('#legacy-setup').evaluate((node) => { node.open = true; });
+    await page.locator('#import-code').fill('BPP1-"><script>alert(1)</script>'); await page.locator('#import').click();
+    await page.locator('#error').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#download-panel').isHidden(), true);
+    const bad = resolve(directory, 'damaged.html');
+    await writeFile(bad, file.html.replace(codeOf(file), 'BPP1BROKEN'));
+    await page.goto(pathToFileURL(bad).href); await page.locator('#error').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#conversation').isHidden(), true);
+    assert.equal(await page.locator('#setup-panel').isHidden(), true);
+    clean();
+  } finally { await browser.close(); }
+});
 
-test('saved file exchanges v2 messages in both directions between Chrome and Edge', { timeout: 60_000 }, async () => {
-  if (!channels.includes('msedge')) return;
+test('Done cancels in-flight encryption and retains the private pairing', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true })).newPage();
+    const file = await createFile(page); await openFile(page, file); await page.locator('#send-mode').click();
+    await page.evaluate(() => {
+      const original = crypto.subtle.encrypt.bind(crypto.subtle);
+      crypto.subtle.encrypt = async (...args) => {
+        const result = await original(...args);
+        await new Promise((release) => { globalThis.releaseEncryption = release; });
+        crypto.subtle.encrypt = original;
+        return result;
+      };
+    });
+    await page.locator('#message').fill('must disappear'); await page.locator('#encrypt').click();
+    await page.waitForFunction(() => !!globalThis.releaseEncryption);
+    await page.locator('#clear').click();
+    await page.evaluate(async () => { globalThis.releaseEncryption(); await new Promise((done) => setTimeout(done, 0)); });
+    assert.equal(await page.locator('#cover').inputValue(), ''); assert.equal(await page.locator('#message').inputValue(), '');
+    assert.equal(await page.locator('#cover-result').isHidden(), true);
+    const next = await write(page, 'still paired');
+    const pair = await importPair(codeOf(file));
+    const { decryptBytes, bytesToText } = await import('../src/crypto.ts');
+    assert.equal(bytesToText(await decryptBytes(pair.key, decodeMessageCover(next))), 'still paired');
+  } finally { await browser.close(); }
+});
+
+test('denied copy/paste has manual fallback; successful clipboard actions and stale paste are safe', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true })).newPage();
+    const file = await createFile(page); await openFile(page, file); await page.locator('#language').click();
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('Denied'); }, readText: async () => { throw new Error('Denied'); } } }));
+    const cover = await write(page, 'clipboard test'); await page.locator('#copy-cover').click();
+    await page.waitForFunction(() => document.querySelector('#feedback').textContent.includes('selected'));
+    assert.equal(await page.locator('#cover').evaluate((field) => field.selectionEnd - field.selectionStart === field.value.length), true);
+    await page.locator('#clear').click(); await page.locator('#receive-mode').click(); await page.locator('#paste-cover').click();
+    await page.waitForFunction(() => document.querySelector('#feedback').textContent.includes('Ctrl+V'));
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'received');
+    assert.equal(await read(page, cover, false), 'clipboard test');
+    await page.locator('#copy-plain').click();
+    await page.waitForFunction(() => document.querySelector('#feedback').textContent.includes('selected'));
+    assert.equal(await page.evaluate(() => window.getSelection().toString()), 'clipboard test');
+    await page.locator('#clear').click(); await page.locator('#receive-mode').click();
+    await page.evaluate((value) => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { readText: async () => value, writeText: async (text) => { globalThis.copiedText = text; } } }), cover);
+    await page.locator('#paste-cover').click(); await page.waitForFunction(() => document.querySelector('#received').value.length > 0);
+    assert.equal(await read(page, cover, false), 'clipboard test');
+    await page.locator('#copy-plain').click();
+    await page.waitForFunction(() => globalThis.copiedText === 'clipboard test');
+    await page.locator('#clear').click(); await page.locator('#receive-mode').click();
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { readText: () => new Promise((done) => { globalThis.releasePaste = done; }) } }));
+    await page.locator('#paste-cover').click(); await page.waitForFunction(() => !!globalThis.releasePaste);
+    await page.locator('#clear').click(); await page.evaluate(() => globalThis.releasePaste('stale text'));
+    assert.equal(await page.locator('#received').inputValue(), '');
+  } finally { await browser.close(); }
+});
+
+test('blocked automatic download can be retried without changing the conversation', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true })).newPage();
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    await page.evaluate(() => { document.getElementById('download').click = () => {}; });
+    await page.locator('#generate').click(); await page.locator('#download-panel').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#setup-controls').isHidden(), true);
+    const file = await saveDownload(page, () => page.locator('#download').click());
+    await openFile(page, file);
+    assert.equal(await page.locator('#home').isVisible(), true);
+  } finally { await browser.close(); }
+});
+
+test('a failed file preparation can be retried', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true })).newPage();
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    await page.evaluate(() => {
+      const original = URL.createObjectURL;
+      URL.createObjectURL = (...args) => { URL.createObjectURL = original; if (args.length) throw new Error('Simulated allocation failure'); };
+    });
+    await page.locator('#generate').click(); await page.locator('#error').waitFor({ state: 'visible' });
+    const file = await saveDownload(page, () => page.locator('#generate').click());
+    await openFile(page, file);
+    assert.equal(await page.locator('#home').isVisible(), true);
+  } finally { await browser.close(); }
+});
+
+test('unsupported browser and CRLF copies fail safely or preserve hashed CSP', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const context = await browser.newContext({ offline: true }); const page = await context.newPage(); const clean = observe(page);
+    const file = await createFile(page);
+    const crlf = resolve(directory, 'crlf-private.html'); await writeFile(crlf, file.html.replace(/\r?\n/g, '\r\n'));
+    await openFile(page, { url: pathToFileURL(crlf).href });
+    assert.equal(await page.locator('.choices').evaluate((node) => getComputedStyle(node).display), 'grid'); clean();
+    const unsupported = await context.newPage();
+    await unsupported.addInitScript(() => Object.defineProperty(globalThis, 'isSecureContext', { value: false }));
+    await unsupported.goto(fileUrl); await unsupported.locator('#error').waitFor({ state: 'visible' });
+    assert.equal(await unsupported.locator('#generate').isDisabled(), true);
+    assert.equal(await unsupported.locator('#conversation').isHidden(), true);
+  } finally { await browser.close(); }
+});
+
+test('mobile width, enlarged text, English, large targets and short errors', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true, viewport: { width: 390, height: 844 } })).newPage();
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    await page.screenshot({ path: 'test-results/simple-setup-mobile.png', fullPage: true });
+    const file = await createFile(page); await openFile(page, file);
+    const noOverflow = async () => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await noOverflow();
+    for (const id of ['send-mode', 'receive-mode', 'language']) assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 48);
+    await page.screenshot({ path: 'test-results/simple-home-mobile.png', fullPage: true });
+    await page.setViewportSize({ width: 320, height: 640 }); await noOverflow();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('#send-mode').click(); await page.locator('#encrypt').click(); await page.locator('#error').waitFor({ state: 'visible' });
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'error');
+    await page.locator('#message').fill('س'.repeat(1025)); await page.locator('#encrypt').click();
+    assert.equal(await page.locator('#cover-result').isHidden(), true);
+    await page.locator('#language').click(); assert.equal(await page.locator('html').getAttribute('dir'), 'ltr');
+    assert.equal(await page.locator('#encrypt').textContent(), 'Prepare message');
+    assert.match(await page.locator('#error').textContent(), /too long/);
+    // At 200% text size on an already narrow viewport, content must reflow.
+    await page.locator('html').evaluate((node) => { node.style.fontSize = '40px'; });
+    await noOverflow(); await page.screenshot({ path: 'test-results/simple-write-200-percent.png', fullPage: true });
+    await page.locator('#clear').click(); await noOverflow();
+  } finally { await browser.close(); }
+});
+
+if (channels.includes('chrome') && channels.includes('msedge')) test('downloaded private file exchanges messages and replies Chrome ↔ Edge', { timeout: 60_000 }, async () => {
   const chrome = await chromium.launch({ channel: 'chrome', headless: true });
   const edge = await chromium.launch({ channel: 'msedge', headless: true });
   try {
-    const a = await (await chrome.newContext({ offline: true })).newPage();
-    const b = await (await edge.newContext({ offline: true })).newPage();
-    await Promise.all([a.goto(fileUrl), b.goto(fileUrl)]);
-    const first = await newPair(a);
-    await newPair(b, first.code);
-    for (const [sender, receiver, message] of [[a, b, 'سلام، فردا ساعت پنج همدیگر را ببینیم.'], [b, a, '\uFEFFدقیق 👋 e\u0301\n ي ك']]) {
-      await sender.locator('#send-mode').click();
-      await sender.locator('#message').fill(message);
-      await sender.locator('#encrypt').click();
-      await sender.locator('#cover-result').waitFor({ state: 'visible' });
-      const cover = await sender.locator('#cover').inputValue();
-      await receiver.locator('#receive-mode').click();
-      await receiver.locator('#received').fill(cover);
-      await receiver.locator('#decrypt').click();
-      await receiver.locator('#plain-result').waitFor({ state: 'visible' });
-      assert.equal(await receiver.locator('#plaintext').textContent(), message);
-    }
+    const alice = await (await chrome.newContext({ offline: true })).newPage(); const bob = await (await edge.newContext({ offline: true })).newPage();
+    const cleanAlice = observe(alice); const cleanBob = observe(bob);
+    const file = await createFile(alice); await openFile(alice, file); await openFile(bob, file);
+    const cover = await write(alice, 'از کروم 👋'); assert.equal(await read(bob, cover), 'از کروم 👋');
+    await bob.locator('#reply').click(); const reply = await write(bob, 'از اج ✓', false);
+    await alice.locator('#clear').click(); assert.equal(await read(alice, reply), 'از اج ✓');
+    cleanAlice(); cleanBob();
   } finally { await chrome.close(); await edge.close(); }
-});
-
-test('unsupported crypto fails closed; denied clipboard offers manual selection', { timeout: 30_000 }, async () => {
-  const browser = await chromium.launch({ channel: channels[0], headless: true });
-  try {
-    const unavailable = await browser.newContext();
-    await unavailable.addInitScript(() => Object.defineProperty(globalThis, 'isSecureContext', { value: false }));
-    const page = await unavailable.newPage();
-    await page.goto(fileUrl);
-    await page.waitForFunction(() => document.querySelector('#capability').textContent.includes('Cannot use encryption'));
-    assert.equal(await page.locator('#generate').isDisabled(), true);
-    const deniedClipboard = await browser.newContext();
-    await deniedClipboard.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: undefined }));
-    const second = await deniedClipboard.newPage();
-    await second.goto(fileUrl);
-    await newPair(second);
-    await second.locator('#message').fill('manual copy test');
-    await second.locator('#encrypt').click();
-    await second.locator('#cover-result').waitFor({ state: 'visible' });
-    await second.locator('#copy-cover').click();
-    assert.match(await second.locator('#feedback').textContent(), /text is selected/);
-    assert.equal(await second.locator('#cover').evaluate((field) => field.selectionEnd - field.selectionStart === field.value.length), true);
-  } finally { await browser.close(); }
-});
-
-test('portable file still passes CSP after Windows line-ending conversion', { timeout: 30_000 }, async () => {
-  await mkdir('test-results', { recursive: true });
-  const html = await readFile('bodo-pech-pech.html', 'utf8');
-  const destination = resolve('test-results/windows-line-endings.html');
-  await writeFile(destination, html.replace(/\r?\n/g, '\r\n'));
-  const browser = await chromium.launch({ channel: channels[0], headless: true });
-  try {
-    const context = await browser.newContext({ offline: true });
-    const page = await context.newPage();
-    const errors = [];
-    page.on('console', (entry) => { if (entry.type() === 'error') errors.push(entry.text()); });
-    await page.goto(pathToFileURL(destination).href);
-    await page.waitForFunction(() => !document.querySelector('#generate').disabled);
-    assert.equal(await page.locator('main').evaluate((node) => getComputedStyle(node).display), 'grid');
-    assert.deepEqual(errors, []);
-  } finally { await browser.close(); }
 });

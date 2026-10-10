@@ -1,110 +1,96 @@
 <!doctype html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="__CSP__">
+  <meta name="bpp-conversation" content="">
   <meta name="referrer" content="no-referrer">
-  <title>Bodo Pech Pech</title>
+  <title>پچ‌پچ · Pech Pech</title>
   <style>__STYLE__</style>
 </head>
 <body>
   <div class="shell">
-    <header>
-      <div class="brand"><span class="wordmark" lang="fa" dir="rtl">پچ‌پچ</span><div><h1>Bodo Pech Pech</h1><p>A private message. A Persian conversation.</p></div></div>
-      <span class="file-badge">One file. Entirely local.</span>
-    </header>
-    <div class="notice"><strong>Experimental prototype</strong><span>Fixed Persian dialogue rules keep this file small. Long covers still sound artificial and can be detected. This is not an audited secure messenger.</span></div>
-    <p id="capability" role="status">Checking this browser’s encryption support…</p>
-    <noscript><p class="error">JavaScript is required. Open this saved HTML in a browser that allows JavaScript and Web Crypto for local files.</p></noscript>
+    <header><h1>پچ‌پچ</h1><button id="language" class="quiet" type="button" lang="en">English</button></header>
+    <p id="capability" role="status" data-en="Opening…">در حال باز شدن…</p>
+    <noscript><p>این فایل را با Chrome یا Edge باز کنید. / Open this file in Chrome or Edge with JavaScript enabled.</p></noscript>
     <main>
-      <aside aria-label="Pair setup">
-        <div class="pair-heading"><h2>Your pair</h2><span id="pair-state">Not connected</span></div>
-        <p>Two people, one shared secret. Set it up before exchanging messages.</p>
-        <details id="setup-panel" open>
-          <summary>Set up a pair</summary>
-          <div id="setup-controls">
-            <p class="step"><strong>1.</strong> One person creates a code.</p>
-            <button id="generate" type="button" disabled>Create a new pair code</button>
-            <div id="generated-panel" hidden>
-              <label for="setup-code">Secret setup code</label>
-              <textarea id="setup-code" rows="4" readonly spellcheck="false" autocomplete="off" aria-describedby="secret-warning"></textarea>
-              <p id="secret-warning" class="warning">Anyone with this code can read and forge this pair’s messages. Share it in person or through a trusted confidential channel, never alongside the cover text.</p>
-              <button id="copy-code" type="button" class="secondary">Copy setup code</button>
-            </div>
+      <section id="setup-panel" hidden aria-labelledby="setup-heading">
+        <h2 id="setup-heading" data-en="Prepare once. Use whenever you need.">یک بار آماده کنید؛ همیشه استفاده کنید.</h2>
+        <p data-en="Make one private conversation file. Keep a copy and give the same file to the other person.">یک فایل گفت‌وگوی خصوصی بسازید. یک نسخه را نگه دارید و همان فایل را به نفر دوم بدهید.</p>
+        <p class="notice" data-en="Anyone with this file can read and write your conversation. Hand it over in person or another trusted private way — never through a monitored messenger.">هر کسی این فایل را داشته باشد، می‌تواند پیام‌های شما را بخواند و بنویسد. آن را حضوری یا از راهی امن و خصوصی بدهید؛ هرگز در پیام‌رسانِ زیر نظر نفرستید.</p>
+        <div id="setup-controls">
+          <button id="generate" class="primary" type="button" disabled data-en="Make & save conversation file">ساخت و ذخیرهٔ فایل گفت‌وگو</button>
+          <details id="legacy-setup"><summary data-en="Already have an old setup code?">کدِ گفت‌وگوی قبلی را دارید؟</summary>
             <form id="import-form" autocomplete="off">
-              <label for="import-code">Or paste your partner’s setup code</label>
-              <input id="import-code" type="password" placeholder="BPP1-…" maxlength="256" autocomplete="off" spellcheck="false" autocapitalize="off">
-              <button id="import" type="submit" class="secondary" disabled>Use this code</button>
+              <label for="import-code" data-en="Paste the old code">کد قبلی را بچسبانید</label>
+              <input id="import-code" type="password" dir="ltr" maxlength="256" autocomplete="off" spellcheck="false" autocapitalize="off">
+              <button id="import" type="submit" class="primary" disabled data-en="Save this conversation as a file">ذخیرهٔ همین گفت‌وگو در یک فایل</button>
             </form>
-          </div>
-          <div id="verify-panel" hidden>
-            <p class="step"><strong>2.</strong> Compare all six groups with your partner in person or over an authenticated channel.</p>
-            <label>Pair fingerprint</label>
-            <output id="fingerprint" class="fingerprint"></output>
-            <label class="check"><input id="verified" type="checkbox"><span>We compared the fingerprint and exchanged the code privately.</span></label>
-            <button id="confirm" type="button" disabled>Start exchanging messages</button>
-            <p class="small">The setup code disappears when you continue. If needed later, keep it in your password manager. This page does not save it.</p>
-          </div>
-        </details>
-        <div id="active-pair" hidden><p>Verified fingerprint</p><output id="active-fingerprint" class="fingerprint"></output><p class="small">Your pair key stays in this tab’s memory until you clear it or leave the page.</p></div>
-        <button id="clear" class="quiet" type="button">Clear key and messages</button>
-        <p class="small">Refresh or close this file to end the session. Clipboard contents are separate and may sync to other devices.</p>
-      </aside>
-      <section class="workspace" aria-label="Messages">
-        <div class="mode-switch" role="group" aria-label="Message direction">
-          <button id="send-mode" type="button" aria-pressed="true">Write a message</button>
-          <button id="receive-mode" type="button" aria-pressed="false">Open a message</button>
+          </details>
         </div>
-        <p id="message-gate">Complete pair setup to encrypt or open a message.</p>
-        <div id="send-panel">
-          <form id="send-form" autocomplete="off">
-            <label for="message">Your private message</label>
-            <textarea id="message" rows="5" dir="auto" spellcheck="false" autocomplete="off" placeholder="Write exactly what you want your partner to read…" maxlength="4096" aria-describedby="byte-count"></textarea>
-            <div class="field-meta"><span>Only encrypted text goes into the cover.</span><span id="byte-count">0 / 2,048 bytes</span></div>
-            <details class="context-details" id="context-details">
-              <summary>Continue the visible conversation</summary>
-              <label for="context">Recent visible Persian conversation (optional)</label>
-              <textarea id="context" lang="fa" dir="rtl" rows="3" maxlength="180000" spellcheck="false" autocomplete="off" placeholder="متن گفت‌وگوی قبلی…"></textarea>
-              <p class="small">Simple local rules recognize invitations, greetings and questions, then stay within one of six themes. They cannot understand arbitrary conversation. Your private message never chooses the theme.</p>
-              <label for="act">How should the visible reply begin?</label>
-              <select id="act"><option value="auto">Follow context</option><option value="0">Continue the topic</option><option value="1">Greet / check in</option><option value="2">Acknowledge an invitation</option><option value="3">Respond to a question</option><option value="4">Acknowledge</option></select>
-            </details>
-            <div class="compose-actions"><div><label for="topic">Cover theme</label><select id="topic"><option value="auto">Follow context</option><option value="0">Rest and a chat</option><option value="1">Tea and a snack</option><option value="2">A nearby walk</option><option value="3">Work / study routine</option><option value="4">Music at home</option><option value="5">A short trip</option></select></div><button id="encrypt" type="submit" disabled>Make Persian cover text</button></div>
-          </form>
-          <section id="cover-result" class="result" hidden aria-labelledby="cover-heading">
-            <div class="result-heading"><h2 id="cover-heading">Ready for your messenger</h2><button id="copy-cover" class="secondary" type="button">Copy cover text</button></div>
-            <p id="cover-stats" class="small"></p>
-            <textarea id="cover" lang="fa" dir="rtl" readonly rows="8" aria-label="Persian cover text" spellcheck="false" autocomplete="off"></textarea>
-            <p class="small">Read the cover before sending. Generate again for different wording; do not edit, translate or shorten it. Send the entire result. Messenger limits may require a shorter private message.</p>
-          </section>
+        <div id="download-panel" hidden>
+          <h2 tabindex="-1" id="download-heading" data-en="Your private file is ready">فایل خصوصی شما آماده است</h2>
+          <p data-en="Open the saved file from Downloads. Give that same file privately to the other person. You can then close this starter page.">فایل ذخیره‌شده را از پوشهٔ دانلودها باز کنید. همان فایل را خصوصی به نفر دوم بدهید. سپس می‌توانید این صفحهٔ اولیه را ببندید.</p>
+          <a id="download" class="primary" data-en="Save the file again">ذخیرهٔ دوبارهٔ فایل</a>
+          <p class="hint" data-en="If no download appeared, use this button. Do not create a different file for the other person.">اگر دانلود شروع نشد، این دکمه را بزنید. برای نفر دوم فایل تازه‌ای نسازید.</p>
         </div>
-        <div id="receive-panel" hidden>
-          <form id="receive-form" autocomplete="off">
-            <label for="received">Persian cover text from your partner</label>
-            <textarea id="received" rows="10" lang="fa" dir="rtl" maxlength="180000" spellcheck="false" autocomplete="off" placeholder="متن کامل را اینجا بچسبانید…"></textarea>
-            <p class="small">Paste only the cover text, without sender names or timestamps. Common spacing, punctuation, and Persian/Arabic ی and ک differences are handled.</p>
-            <button id="decrypt" type="submit" disabled>Open private message</button>
-          </form>
-          <section id="plain-result" class="result" hidden aria-labelledby="plain-heading">
-            <div class="result-heading"><h2 id="plain-heading">Authenticated message</h2><button id="reply" type="button" class="secondary">Write a reply</button></div>
-            <p class="small">The shared key authenticated this message. Either holder of the key could have written it; it could also be a replay.</p>
-            <pre id="plaintext" dir="auto" tabindex="0"></pre>
-            <button id="copy-plain" type="button" class="quiet">Copy private message</button>
-          </section>
-        </div>
-        <p id="feedback" role="status" aria-live="polite"></p>
-        <p id="error" class="error" role="alert" hidden></p>
       </section>
+      <section id="conversation" hidden aria-label="گفت‌وگو">
+        <div id="home">
+          <h2 id="home-heading" tabindex="-1" data-en="What would you like to do?">می‌خواهید چه کار کنید؟</h2>
+          <div class="choices">
+            <button id="send-mode" type="button" class="choice"><span class="symbol" aria-hidden="true">✎</span><span data-en="Write a message">نوشتن پیام</span></button>
+            <button id="receive-mode" type="button" class="choice"><span class="symbol" aria-hidden="true">▤</span><span data-en="Read a message">خواندن پیام</span></button>
+          </div>
+          <p class="hint" data-en="Keep this private file. Open it again whenever you need it.">این فایل خصوصی را نگه دارید. هر وقت خواستید، دوباره بازش کنید.</p>
+        </div>
+        <div id="message-screen" hidden>
+          <button id="clear" class="quiet back" type="button" data-en="Done · clear messages">تمام شد · پاک کردن پیام‌ها</button>
+          <div id="send-panel" hidden>
+            <form id="send-form" autocomplete="off">
+              <label for="message" class="title" data-en="What do you want to say?">چه می‌خواهید بگویید؟</label>
+              <textarea id="message" rows="5" dir="auto" spellcheck="false" autocomplete="off" maxlength="4096" aria-describedby="message-hint"></textarea>
+              <p id="message-hint" class="hint" data-en="A short message is easier to send.">پیام کوتاه راحت‌تر فرستاده می‌شود.</p>
+              <button id="encrypt" class="primary" type="submit" data-en="Prepare message">آماده کردن پیام</button>
+            </form>
+            <section id="cover-result" hidden aria-labelledby="cover-heading">
+              <h2 id="cover-heading" tabindex="-1" data-en="Copy this into your messenger">این متن را در پیام‌رسان بفرستید</h2>
+              <p class="hint" data-en="Send all of it, without changing the words. It may sound unusual.">همهٔ متن را بدون تغییر کلمات بفرستید. ممکن است متن غیرعادی به نظر برسد.</p>
+              <textarea id="cover" lang="fa" dir="rtl" readonly rows="6" aria-label="متن آمادهٔ ارسال / Text to send" spellcheck="false" autocomplete="off"></textarea>
+              <button id="copy-cover" class="primary" type="button" data-en="Copy text">کپی کردن متن</button>
+              <div class="small-actions"><button id="edit-message" class="quiet" type="button" data-en="Edit my message">ویرایش پیام من</button><button id="new-message" class="quiet" type="button" data-en="New message">پیام تازه</button></div>
+            </section>
+          </div>
+          <div id="receive-panel" hidden>
+            <form id="receive-form" autocomplete="off">
+              <label for="received" class="title" data-en="Bring the message here">پیام دریافتی را اینجا بیاورید</label>
+              <p class="hint" data-en="Copy the entire message from your messenger, then paste it here.">همهٔ پیام را از پیام‌رسان کپی کنید و اینجا بچسبانید.</p>
+              <button id="paste-cover" class="secondary" type="button" data-en="Paste text">چسباندن متن</button>
+              <textarea id="received" rows="6" lang="fa" dir="rtl" maxlength="180000" spellcheck="false" autocomplete="off"></textarea>
+              <button id="decrypt" class="primary" type="submit" data-en="Read message">خواندن پیام</button>
+            </form>
+            <section id="plain-result" hidden aria-labelledby="plain-heading">
+              <h2 id="plain-heading" tabindex="-1" data-en="Your message">پیام شما</h2>
+              <pre id="plaintext" dir="auto" tabindex="0"></pre>
+              <button id="reply" class="primary" type="button" data-en="Write a reply">نوشتن پاسخ</button>
+              <button id="copy-plain" class="quiet" type="button" data-en="Copy this message">کپی کردن این پیام</button>
+              <button id="read-another" class="quiet" type="button" data-en="Read another message">خواندن پیام دیگر</button>
+            </section>
+          </div>
+        </div>
+      </section>
+      <p id="feedback" role="status" aria-live="polite"></p>
+      <p id="error" role="alert" tabindex="-1" hidden></p>
     </main>
     <footer>
-      <details><summary>What this file does and does not protect</summary><div class="limits">
-        <p>This file uses your browser’s AES-256-GCM encryption with a fresh random nonce per message. Exact bytes are packed losslessly before encryption when that saves space. Persian dialogue rules carry the encrypted bytes; the rules are not encryption. The cover exposes its theme, reply style and packed message size.</p>
-        <p>There is no forward secrecy, replay protection, sender identity proof, or protection against a compromised device, browser extension, keyboard, clipboard service, or altered copy of this HTML file. A leaked pair code exposes past and future messages made with it. Use a separate new code for each pair.</p>
-        <p>The file makes no network requests, installs nothing, and does not save keys, messages, or context to browser storage. Browser and operating-system memory, session recovery, input history, and the clipboard are outside that guarantee. Clearing drops references; secure memory erasure is not guaranteed.</p>
-        <p>Keep a trusted copy of this HTML file. Open it directly in a full browser; file previewers may not run JavaScript. Windows Chrome and Edge are tested. Galaxy A51-class Android phones are a design target, but actual Android file handling and performance still need device testing.</p>
-      </div></details>
-      <span>Prototype v0.2 · Sends v2, reads v1 + v2 · No AI</span>
+      <details><summary data-en="About this private file">دربارهٔ این فایل خصوصی</summary>
+        <p data-en="This private file contains the conversation’s secret. Anyone with a copy can read old and new messages and write messages as either person. Closing the page or clearing messages does not remove the secret from the file. Keep it off shared or synced folders. If it is lost or copied, make a new conversation file and hand it over privately.">راز این گفت‌وگو در خودِ فایل خصوصی است. هر کسی نسخه‌ای از آن را داشته باشد، می‌تواند پیام‌های قدیم و جدید را بخواند و به جای هر دو نفر پیام بنویسد. بستن صفحه یا پاک کردن پیام‌ها، راز را از فایل پاک نمی‌کند. فایل را در پوشهٔ مشترک یا همگام‌شونده نگذارید. اگر گم یا کپی شد، فایل گفت‌وگوی تازه‌ای بسازید و خصوصی تحویل بدهید.</p>
+        <p data-en="Experimental, not independently audited. Messages are encrypted with AES-256-GCM. Persian wording is a reversible disguise, may sound artificial, and can be detected. There is no sender identity proof, replay protection or forward secrecy. Protect your device and clipboard too.">این نسخه آزمایشی است و بررسی امنیتی مستقل نشده است. پیام‌ها با AES-256-GCM رمز می‌شوند. متن فارسی فقط پوشش برگشت‌پذیر است؛ ممکن است مصنوعی باشد و شناسایی شود. هویت فرستنده ثابت نمی‌شود و از تکرار پیام یا افشای پیام‌های قبلی پس از لو رفتن فایل جلوگیری نمی‌شود. از دستگاه و کلیپ‌بورد خود هم مراقبت کنید.</p>
+        <p data-en="No AI, network requests, browser storage or installation. Only the file you deliberately save contains the secret; messages are not added to it. Clearing cannot guarantee memory erasure. Use a trusted HTML copy: someone who changes the file can change what it does.">هوش مصنوعی، درخواست اینترنتی، ذخیره‌سازی مرورگر یا نصب برنامه‌ای وجود ندارد. فقط فایلی که خودتان ذخیره می‌کنید حاوی راز است؛ پیام‌ها به آن اضافه نمی‌شوند. پاک کردن، محو شدن قطعی از حافظه را تضمین نمی‌کند. از نسخهٔ معتبر استفاده کنید؛ هر کس فایل را تغییر دهد می‌تواند کارِ آن را هم تغییر دهد.</p>
+        <p data-en="Tested as an offline saved file in Windows Chrome and Edge. Android phones, including Galaxy A51-class devices, still need real-device testing. Open in a full browser, not a file previewer.">فایل ذخیره‌شده بدون اینترنت در Chrome و Edge ویندوز آزمایش شده است. گوشی‌های اندروید، از جمله دستگاه‌های هم‌ردهٔ Galaxy A51، هنوز به آزمایش واقعی نیاز دارند. فایل را در مرورگر کامل باز کنید، نه پیش‌نمایش فایل.</p>
+      </details>
+      <p class="version" data-en="Pech Pech 0.3 · Reads v1 + v2">پچ‌پچ ۰٫۳ · خواندن نسخه‌های ۱ و ۲</p>
     </footer>
   </div>
   <script>__SCRIPT__</script>

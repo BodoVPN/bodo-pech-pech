@@ -1,54 +1,38 @@
-# V2 verification — 2026-10-10
+# Simple private-file interface verification — 2026-10-10
 
-The final self-contained HTML is **66,523 bytes** (65.0 KiB). SHA-256: `ba08e3b3e9fe89f8ed88ae6503f99e2f053560dbeb357115d185cae5a66f2ad7`. No AI/model/runtime assets are included.
+The generic 0.3 HTML is **92,490 bytes (90.3 KiB)**. SHA-256: `2df0b956ad700b7fe106761daa5b53a7c62abca0375b07c24a24849c642d5bb4`. Each private export adds exactly 76 ASCII bytes in the inert conversation metadata slot. The generic tracked file has no embedded conversation key. No model, runtime download, server or companion asset is needed.
 
-## Checks and method
+## Fresh checks
 
-`npm run check` passed: TypeScript, ESLint with zero warnings, 22 protocol tests and 6 browser tests. The actual saved file was exercised under `file://` with networking disabled before first load, in Windows Chrome 155.0.8059.39 and Edge 156.0.4314.15. Tests include isolated peer setup, Chrome-to-Edge and Edge-to-Chrome exchange, legacy v1 recovery, exact Unicode, reply context, changed public context/version, wrong keys, malformed/truncated/tampered content, stale result cancellation, clear/reload, manual clipboard fallback, unsupported-crypto behavior and CRLF/CSP portability. Both browsers reported zero HTTP requests and zero page/console errors. A 390-pixel viewport was visually checked; that is not Android testing.
+`npm run check` passed TypeScript, ESLint with zero warnings, **22 protocol tests and 11 browser tests**. No tests were skipped. Saved generic and downloaded private files were exercised under `file://` in Windows **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**, with networking disabled before loading. Observed pages emitted no HTTP requests, page errors or console errors.
 
-The reproducible comparison is `node scripts/compare.mjs`. It loads the pinned v1 HTML from commit `bd94d30eaeb161713d46e16ee37f5c95416325e4` and the current v2 HTML in fresh offline browser contexts. Nine scenarios × ten independent encryptions × two formats × two browsers produced **360 authenticated exact round-trips**. No secrets or pair codes are stored in the report. Raw observations and artifact hashes are in [measurements.json](measurements.json). Full first-run covers for all seven normal-size scenarios are in [COVER-SAMPLES.md](COVER-SAMPLES.md). Maximum-size cases are synthetic boundary probes, not conversational samples.
+The crypto, v1 codec, v2 grammar tables, dialogue parser and byte packing source files are unchanged from `c859a3b`. Fresh protocol tests still cover frozen v1/v2 fixtures, independent Node AES fixtures, all 30 public profiles, arbitrary bytes and Unicode, size boundaries, normalization, malformed covers, wrong keys and mutations of authenticated packet bytes/profile/version.
 
-Hardware: Windows, Intel Core i9-12900K, 32 GB installed RAM; Node.js 24.19.0 / npm 12.0.2. This is a fast desktop, not representative phone hardware. No CPU/GPU model inference is involved.
+Browser flows cover:
 
-## Visible length
+- Creating a file with the generic starter, observing the real download, saving it, and reopening it offline. Download retry yields byte-identical content for the same conversation. Both Chrome and Edge complete this flow.
+- Two isolated peers using the same downloaded file, exact Unicode/BOM/whitespace/emoji/HTML-like text, normalized Persian covers, automatic reply context, and actual Chrome-to-Edge-to-Chrome exchange.
+- Done clearing all message fields and reply context while preserving pairing; reload and closing/reopening still recover old messages with the private file.
+- Injecting synthetic draft, pasted/result text and unrelated DOM state into the live page before export. None appears in the download. Removing the single key value makes the exported bytes identical to the known generic artifact. The script and style are unchanged, so their CSP hashes still match.
+- Independent new conversations generating distinct random keys; navigating from one conversation file to another cannot recover the first conversation's cover with the second file. Wrong-key failures expose no plaintext.
+- Legacy BPP1 conversion, existing v1 and v2 messages, truncated/altered/malformed covers, invalid/injection-shaped setup input, and a damaged private key field.
+- Done invalidating an in-flight encryption result; a delayed clipboard paste cannot restore cleared text. Clipboard success and denial paths include full-text selection and manual paste instructions.
+- Blocked automatic download retried through the visible link; a simulated file-allocation failure can also be retried. A ready-file message is not a claim that the user's browser has saved it.
+- Unsupported browser behavior and Windows CRLF conversion retaining the hashed CSP in a downloaded private file.
+- Persian/English direction and labels, focused results/errors, 48+ pixel tested targets, 390- and 320-pixel layouts, and 200% text enlargement without horizontal document overflow. Setup, home and enlarged-write screenshots were visually reviewed.
 
-Lengths count JavaScript UTF-16 code units, the same counter shown by the UI. Means below combine 20 runs per format across both browsers. Fresh nonces change word choices.
+Disposable keyed test files are saved outside the output repository in an owned workspace scratch directory and deleted after the test suite. No real conversation keys or personal files are committed. Test screenshots are ignored under `test-results/`.
 
-| Scenario | Private UTF-8 bytes | V1 mean chars | V2 mean chars | Reduction | V2 observed range |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Greeting | 8 | 1,380 | 1,027 | 25.5% | 979–1,072 |
-| Tea invitation / 67-byte reference | 67 | 2,980 | 1,868 | 37.3% | 1,828–1,935 |
-| Walk invitation | 46 | 2,469 | 1,613 | 34.7% | 1,560–1,668 |
-| Work question | 52 | 2,779 | 1,705 | 38.6% | 1,660–1,795 |
-| Music question | 47 | 2,596 | 1,673 | 35.6% | 1,604–1,768 |
-| Travel continuation | 50 | 2,592 | 1,693 | 34.7% | 1,595–1,768 |
-| Mixed exact Unicode | 40 | 2,386 | 2,037 | 14.6% | 1,971–2,110 |
-| Maximum ASCII | 2048 | 60,633 | 56,101 | 7.5% | 55,819–56,287 |
-| Maximum Persian bytes | 2048 | 60,654 | 28,510 | 53.0% | 28,391–28,641 |
+## Security and usability boundaries
 
-The 67-byte reference is `سلام، فردا ساعت پنج همدیگر را ببینیم.`. V2 packs its exact UTF-8 from 67 bytes to 38 bytes including the mode byte; the AES packet becomes 71 bytes instead of 100. Size gains combine byte packing and the different grammar. The synthetic maximum-Persian case is 1,024 copies of س; fixed substitution benefits those letters, but there is no run-length/adaptive compression. ASCII gains are substantially smaller. Even “سلام” still needs about a thousand visible characters because nonce/tag/framing overhead dominates.
+Everyday use has two actions and no code/fingerprint/confirmation screens. The key is deliberately stored **unencrypted in the private HTML**. Anyone with it can read past/future messages or forge messages for either person; a trusted helper also has that access. The one-time handover must still be confidential and authenticated. There is no sender identity proof, forward secrecy, replay prevention, recovery service or independent audit. See [SECURITY.md](../SECURITY.md).
 
-## Latency and memory
+Exports use an immutable shell embedded at build time plus the original bootstrap script. They do not serialize the rendered page. There is no browser storage or key cache shared across files. Application clearing cannot erase downloaded files, OS/browser history, clipboard contents or all memory.
 
-Timing measures form submission to the authenticated result/cover DOM update inside the browser, excluding Playwright command latency, text entry, clipboard/messenger transfer and painting. Sub-millisecond values have limited precision. Startup is one fresh-context observation per build and includes polling overhead; OS disk cache was not forced cold. Do not infer a startup speedup from one v1/v2 observation.
+This is developer verification, not a usability study with older adults or proof of universal browser/download compatibility. The browser still owns file-save prompts and the user must open the downloaded file. Persian covers retain their prior length, artificiality and detectability limitations.
 
-| Browser / format | Startup observation (ms) | Normal-case send median range (ms) | Largest send observation (ms) | Largest open observation (ms) | JS heap after workload (MiB) | JS heap after clear + test-only GC (MiB) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| chrome / v1 | 156.9 | 0.3–0.4 | 0.9 | 3.6 | 15.52 | 2.30 |
-| chrome / v2 | 78.0 | 0.4–0.5 | 3.1 | 5.6 | 10.67 | 2.45 |
-| msedge / v1 | 235.9 | 0.3–0.3 | 0.8 | 3.1 | 13.57 | 2.30 |
-| msedge / v2 | 65.9 | 0.3–0.4 | 3.3 | 5.1 | 13.60 | 2.45 |
+Android remains unverified. No device was attached; automatic approval review rejected emulator launch with only “blocked by policy.” It was not retried. The [real-device checklist](ANDROID-CHECK.md) now includes private-file creation, download, reopening and handover in addition to exchange/clipboard/performance. Desktop viewport and enlarged-text checks are not Android or native pinch-zoom tests.
 
-Heap values are Chromium CDP `Runtime.getHeapUsage` snapshots after 90 send/open cycles, including test instrumentation. They are **not peak RAM, process working set, DOM memory, GPU memory or Android measurements**. Forced collection was only a measurement step; the app does not force GC or promise memory erasure. Browser input/undo history and internal DOM allocations can outlive application clearing; raw DOM counters are retained in the evidence. Runtime data consists of small fixed tables and bounded message buffers. A real phone must still establish total memory use, responsiveness and local-file usability.
+## Historical measurements
 
-## Complete-cover review
-
-The six theme samples and mixed-Unicode sample were read in full. Improvements are concrete: the tea invitation is acknowledged instead of a generic food opener; tea covers stay with tea/snacks rather than jumping to soup/rice/salad; music endings use listening/playing verbs; singular and compound subjects have compatible predicates; body questions are absent; and later sections move from observations to preferences and tentative continuation. Generated replies continue the theme rather than repeat greetings.
-
-The limits are also visible in the full samples. A short secret still produces many sentences. Tea varieties and positive judgments recur; several qualifiers are unnecessary; general themes can contain strained combinations. The result can read like an extended list of preferences. There was no external/native-speaker study, automated fluency score, or steganalysis evaluation. This is improved bounded grammar, **not a claim of natural human conversation or undetectability**.
-
-## Self-review and outstanding validation
-
-Reviewed profile/version authentication, unchanged pair setup and AES-GCM parameters, authentication before bounded unpacking, exact byte preservation, prefix-free parsing, stage synchronization, padding/full-consumption checks, non-repeating subject state, context/secret separation, DOM safety, cancellation and output packaging. Frozen v1/v2 fixtures and an independent Node AES fixture supplement round-trip tests. Production code has no network, storage, worker, WASM or model-loading API. This is a developer review, not an independent security audit.
-
-Android remains unverified. No device was attached; automatic approval review blocked emulator launch with only “blocked by policy,” and it was not retried. Follow [ANDROID-CHECK.md](ANDROID-CHECK.md) on a Galaxy A51-class or comparable budget ARM phone, including offline local-file opening, both-direction exchange, actual messenger copy/paste, timings, repeated use and the size boundary. Desktop viewport checks cannot establish those results.
+The 360-run codec comparison, cover samples and old startup/heap timings are retained in [VERIFICATION-V2.md](VERIFICATION-V2.md). The historical script now loads both pinned Git artifacts, because its interface selectors describe those builds. Those numbers are not measurements of the redesigned 0.3 UI; the unchanged protocol did not warrant rerunning the extensive benchmark.

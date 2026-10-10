@@ -9,10 +9,13 @@ import { chromium } from 'playwright';
 
 const run = promisify(execFile);
 const baselineCommit = 'bd94d30eaeb161713d46e16ee37f5c95416325e4';
+const dialogueCommit = 'c859a3badb2b193ff4e930fa9361b23a1ebf4cd2';
 const directory = 'work/comparison';
 await mkdir(directory, { recursive: true });
 const { stdout } = await run('git', ['show', `${baselineCommit}:bodo-pech-pech.html`], { encoding: 'buffer' });
 await writeFile(`${directory}/baseline-v1.html`, stdout);
+const dialogue = await run('git', ['show', `${dialogueCommit}:bodo-pech-pech.html`], { encoding: 'buffer' });
+await writeFile(`${directory}/baseline-v2.html`, dialogue.stdout);
 const scenarios = [
   { name: 'Greeting', message: 'سلام', context: 'سلام، خوبی؟' },
   { name: 'Tea invitation / 67-byte reference', message: 'سلام، فردا ساعت پنج همدیگر را ببینیم.', context: 'چای دم کردم، کیک هم داریم. میای؟' },
@@ -24,7 +27,7 @@ const scenarios = [
   { name: 'Maximum ASCII', message: 'a'.repeat(2048), context: 'چای دم کردم، میای؟' },
   { name: 'Maximum Persian bytes', message: 'س'.repeat(1024), context: 'چای دم کردم، میای؟' },
 ];
-const report = { date: new Date().toISOString(), baselineCommit, repetitions: 10, scenarios, browsers: [] };
+const report = { date: new Date().toISOString(), baselineCommit, dialogueCommit, repetitions: 10, scenarios, browsers: [] };
 const distribution = (values) => {
   const sorted = [...values].sort((a, b) => a - b);
   return { min: sorted[0], median: sorted[Math.floor(sorted.length / 2)], max: sorted.at(-1), mean: values.reduce((a, b) => a + b, 0) / values.length };
@@ -34,7 +37,7 @@ for (const channel of ['chrome', 'msedge']) {
   const browser = await chromium.launch({ channel, headless: true });
   try {
     const result = { channel, version: browser.version(), builds: [] };
-    for (const [name, path] of [['v1', `${directory}/baseline-v1.html`], ['v2', 'bodo-pech-pech.html']]) {
+    for (const [name, path] of [['v1', `${directory}/baseline-v1.html`], ['v2', `${directory}/baseline-v2.html`]]) {
       const context = await browser.newContext({ offline: true });
       const page = await context.newPage();
       const network = []; const errors = [];

@@ -4,7 +4,7 @@ This page preserves the v1 wire specification. New messages use [format v2](FORM
 
 ## Architecture
 
-`src/crypto.ts` owns key import and authenticated encryption. `src/codec.ts` preserves the v1 phrase codec. `src/dialogue.ts` and `src/dialogue-data.ts` implement v2, and `src/packing.ts` provides its reversible byte representation. `src/main.ts` owns transient UI state. None uses a network API. `scripts/build.mjs` bundles the code into an IIFE, inlines styles, and hashes both blocks into a restrictive CSP. The output is one HTML file without module imports, fetched assets, a service worker, or a server.
+`src/crypto.ts` owns key import and authenticated encryption. `src/codec.ts` preserves the v1 phrase codec. `src/dialogue.ts` and `src/dialogue-data.ts` implement v2, and `src/packing.ts` provides its reversible byte representation. `src/main.ts` owns UI state. In 0.3, `src/personal-file.ts` exports an immutable build-time shell with a validated setup code in one inert metadata field. The private file deliberately persists that secret; Done clears only message state. None uses a network API. `scripts/build.mjs` bundles the code into an IIFE, inlines styles, and hashes both blocks into a restrictive CSP. The output is one HTML file without module imports, fetched assets, a service worker, or a server.
 
 The platform decision is a portable local HTML file. Standard Web Crypto avoids shipping another cipher implementation. A shared random secret with explicit trusted setup is the smallest defensible setup for this prototype; it is not a substitute for a reviewed asynchronous messaging protocol.
 

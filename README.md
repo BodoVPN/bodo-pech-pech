@@ -1,31 +1,35 @@
-# Bodo Pech Pech
+# Bodo Pech Pech · پچ‌پچ
 
-An experimental **single offline HTML file** for two people to send private messages inside reversible Persian cover text. No AI, account, installation, server, runtime download or external API.
+**[Download the HTML / دریافت فایل](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/bodo-pech-pech.html)** · [Latest release / آخرین نسخه](https://github.com/BodoVPN/bodo-pech-pech/releases/latest)
 
-Everyday use has two large Persian buttons: **نوشتن پیام** (Write a message) and **خواندن پیام** (Read a message). An English button changes the language. No setup codes, fingerprints, confirmations or technical controls appear in the daily flow.
+One offline file for exchanging messages through Persian cover text. No account or installation. / یک فایل آفلاین برای فرستادن پیام با پوشش متن فارسی؛ بدون حساب یا نصب.
 
-## Prepare once
+## شروع سریع
 
-1. Open a trusted copy of [bodo-pech-pech.html](bodo-pech-pech.html) in Chrome or Edge. On GitHub, use **Download raw file**, then open the saved file in the full browser.
-2. Enter a passphrase with **at least 8 characters, one number and one symbol**, or choose **Generate** for a random 16-character suggestion. Persian/Arabic digits work; spaces do not count as symbols. Generate fills and shows the editable field without saving or copying anything. Show/Hide helps check it without a second confirmation field. Choose **Make & save conversation file**. If no download appears, choose **Save the file again**. Browser save prompts and Downloads remain outside the page's control.
-3. Open the downloaded private `pech-pech-private-….html` file and **Unlock** with that passphrase. Give **the same file** and passphrase to the other person privately; keep the passphrase separate from the file when sending it. Do not create two different files independently.
+1. فایل بالا را دانلود کنید و در **Chrome** باز کنید.
+2. **یک نفر** رمز انتخاب کند (یا «ساخت خودکار» را بزند)، سپس **ساخت و ذخیرهٔ فایل گفت‌وگو** را بزند.
+3. **همان فایل تازه ذخیره‌شده** را خصوصی به نفر دوم بدهید؛ رمز را جداگانه برسانید. هر دو باید نسخه‌ای از **همان فایل** داشته باشید، نه دو گفت‌وگوی جدا.
+4. فایل خصوصی را باز کنید و رمز را وارد کنید. **نوشتن پیام** متن فارسی می‌سازد؛ همهٔ آن را در پیام‌رسان کپی کنید. برای دریافت، **خواندن پیام** را بزنید و متن دریافتی را بچسبانید.
 
-**The saved conversation key is encrypted with your passphrase.** Someone holding the file can try passphrase guesses offline; eight characters plus composition is an acceptance minimum, not a strength guarantee. The generated value is recommended. Keep it safe: there is no reset or recovery. Anyone with the file and passphrase can read old/new messages and write as either person. The generic file has no conversation secret. Each new setup creates an independent random 256-bit key; the passphrase protects that key rather than replacing it.
+فراموشی رمز ممکن است باعث از دست رفتن دسترسی شود. برای فایل قدیمی، «محافظت از گفت‌وگوی قبلی» را بزنید؛ نسخه‌های قدیمیِ بدون محافظت با این کار امن یا باطل نمی‌شوند.
 
-Trust still depends on an authentic, unmodified HTML file and private handover. A helper who creates the file knows its passphrase. If the key or passphrase is exposed, create a new conversation and hand it over privately; changing storage protection cannot secure already-exposed traffic.
+## Quick start
 
-## Everyday use
+1. Download the HTML above and open it in **Chrome** (Edge works too).
+2. **One person** chooses a password or clicks **Generate**, then **Make & save conversation file**.
+3. Privately give the other person **that same newly saved file**, and tell them the password separately. Both people must use copies of **the same file**, not create two conversations.
+4. Open your private file and **Unlock**. **Write a message** makes Persian text to copy into your messenger. **Read a message** opens the received text you paste in.
 
-- **Unlock once:** opening or reloading asks for the passphrase. Enter submits. Switching to your messenger and returning keeps the tab unlocked. Existing protected files still accept their original passphrases, even without a number or symbol; the new rules apply only when creating/protecting a file.
-- **Send:** **Write a message** → write → **Prepare message** → **Copy text**, then paste the entire result into your messenger. Do not edit or shorten the cover.
-- **Read:** **Read a message** → paste the received text → **Read message**. **Write a reply** continues the visible conversation automatically.
-- **Done · clear messages** clears message fields/context and returns to the two buttons, keeping the tab unlocked. Closing, reloading or navigating away drops the runtime key. Reopening requires the passphrase and retains the same conversation.
+Forgetting the password can lose access. For an old file/code, choose **Protect an older conversation**; this does not secure or revoke old unprotected copies.
 
-Only the current step is shown. Denied clipboard access falls back to text selection or input focus with short manual instructions. Messages are never added to private downloads, and no browser storage is used. Browser/OS clipboard history is separate. Clearing drops references; it does not guarantee memory erasure.
+Experimental, not independently audited. / آزمایشی؛ بررسی امنیتی مستقل نشده است. **[Security limits / محدودیت‌های امنیتی](SECURITY.md)**
 
-## Existing conversations
+## A few useful details
 
-Enter a new passphrase in the starter, then open **Protect an older conversation**. Choose the old private HTML file **or** paste its BPP1 setup code, then save a protected copy. The old HTML is read as text, never executed or opened as a document. The original conversation key is preserved, so existing v1/v2 covers remain readable and replies still use v2. **Old plaintext files/codes still work and cannot be revoked by this conversion.** Keep them safe or delete retained copies/backups; deletion cannot be guaranteed. Migration is not recovery from an already-compromised key.
+- Passwords need at least **8 characters, one number and one symbol**. Persian/Arabic digits work. **Generate** chooses a random editable 16-character value; it does not submit or copy it.
+- Both people keep their private file. Unlock once after opening/reloading; switching to a messenger and **Done · clear messages** keep it unlocked. Done clears messages/context.
+- Copy the entire generated text without changing it. **Write a reply** continues the conversation. If automatic copy/paste is blocked, use your browser's normal copy/paste.
+- Existing protected files still accept their original passwords. Protecting an old file/code preserves v1/v2 message compatibility.
 
 ## What to expect
 
@@ -33,7 +37,7 @@ The unchanged v2 deterministic grammar and lossless byte packing use six bounded
 
 Private messages allow 1–2,048 original UTF-8 bytes. Exact Unicode, whitespace, emoji and Persian/Arabic variants are preserved; textarea line endings follow the browser's LF behavior. Messenger limits may require shorter messages. The parser tolerates only documented spacing/punctuation/letter variations; paraphrasing, missing words, names and timestamps can prevent opening.
 
-AES-256-GCM, random nonces and authenticated format/profile headers are unchanged. There is no forward secrecy, replay protection, sender identity proof, compromised-device protection or recovery service. See [SECURITY.md](SECURITY.md), [v2 format](docs/FORMAT-V2.md) and [v1 format](docs/FORMAT.md).
+For protocol details, see [v2 format](docs/FORMAT-V2.md), [v1 format](docs/FORMAT.md) and [protected key storage](docs/KEY-STORAGE.md).
 
 ## Support and verification
 

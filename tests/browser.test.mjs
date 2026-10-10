@@ -4,6 +4,9 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 import { chromium } from 'playwright';
+import { encryptBytes, importPair, textToBytes } from '../src/crypto.ts';
+import { encodeCover } from '../src/codec.ts';
+import { PROFILE_OPENERS } from '../src/dialogue-data.ts';
 
 const fileUrl = pathToFileURL(resolve('bodo-pech-pech.html')).href;
 const channels = (process.env.BROWSER_CHANNELS || 'chrome,msedge').split(',');
@@ -81,6 +84,13 @@ for (const channel of channels) {
       const first = await newPair(alice);
       const second = await newPair(bob, first.code);
       assert.equal(first.fingerprint, second.fingerprint);
+      const legacyPair = await importPair(first.code);
+      const legacyCover = encodeCover(await encryptBytes(legacyPair.key, textToBytes('پیام قدیمی 👋\r\n'), 1));
+      await bob.locator('#receive-mode').click();
+      await bob.locator('#received').fill(legacyCover);
+      await bob.locator('#decrypt').click();
+      await bob.locator('#plain-result').waitFor({ state: 'visible' });
+      assert.equal(await bob.locator('#plaintext').textContent(), 'پیام قدیمی 👋\r\n');
       const message = '\uFEFF  سلام 👋\nمی‌خواهم دقیق بماند. e\u0301\n<img src=x onerror=alert(1)>  ';
       await alice.locator('#message').fill(message);
       await alice.locator('#context-details').evaluate((details) => { details.open = true; });
@@ -88,7 +98,8 @@ for (const channel of channels) {
       await alice.locator('#encrypt').click();
       await alice.locator('#cover-result').waitFor({ state: 'visible' });
       const cover = await alice.locator('#cover').inputValue();
-      assert.ok(cover.startsWith('حالا که صحبت خوراکی شد'));
+      assert.ok(PROFILE_OPENERS[8].some((opener) => cover.startsWith(opener)));
+      assert.match(await alice.locator('#cover-stats').textContent(), /Tea and a snack.*Respond to a question/);
       assert.ok(!cover.includes('onerror'));
       await alice.locator('#copy-cover').click();
       await alice.waitForFunction(() => /Copied|selected/.test(document.querySelector('#feedback').textContent));
@@ -105,7 +116,7 @@ for (const channel of channels) {
       await bob.locator('#encrypt').click();
       await bob.locator('#cover-result').waitFor({ state: 'visible' });
       const reply = await bob.locator('#cover').inputValue();
-      assert.ok(reply.startsWith('حالا که صحبت خوراکی شد'));
+      assert.ok(PROFILE_OPENERS[5].some((opener) => reply.startsWith(opener)));
       await alice.locator('#receive-mode').click();
       await alice.locator('#received').fill(reply);
       await alice.locator('#decrypt').click();
@@ -131,6 +142,12 @@ for (const channel of channels) {
       assert.equal(await alice.locator('#cover').inputValue(), '');
       await alice.locator('#encrypt').click();
       await alice.locator('#cover-result').waitFor({ state: 'visible' });
+      await alice.locator('#context-details').evaluate((details) => { details.open = true; });
+      await alice.locator('#act').selectOption('4');
+      assert.equal(await alice.locator('#cover').inputValue(), '');
+      await alice.locator('#encrypt').click();
+      await alice.locator('#cover-result').waitFor({ state: 'visible' });
+      assert.match(await alice.locator('#cover-stats').textContent(), /Acknowledge/);
       await mkdir('test-results', { recursive: true });
       await alice.screenshot({ path: `test-results/${channel}-desktop.png`, fullPage: true });
       await alice.setViewportSize({ width: 390, height: 844 });
@@ -152,6 +169,31 @@ for (const channel of channels) {
     } finally { await browser.close(); }
   });
 }
+
+test('saved file exchanges v2 messages in both directions between Chrome and Edge', { timeout: 60_000 }, async () => {
+  if (!channels.includes('msedge')) return;
+  const chrome = await chromium.launch({ channel: 'chrome', headless: true });
+  const edge = await chromium.launch({ channel: 'msedge', headless: true });
+  try {
+    const a = await (await chrome.newContext({ offline: true })).newPage();
+    const b = await (await edge.newContext({ offline: true })).newPage();
+    await Promise.all([a.goto(fileUrl), b.goto(fileUrl)]);
+    const first = await newPair(a);
+    await newPair(b, first.code);
+    for (const [sender, receiver, message] of [[a, b, 'سلام، فردا ساعت پنج همدیگر را ببینیم.'], [b, a, '\uFEFFدقیق 👋 e\u0301\n ي ك']]) {
+      await sender.locator('#send-mode').click();
+      await sender.locator('#message').fill(message);
+      await sender.locator('#encrypt').click();
+      await sender.locator('#cover-result').waitFor({ state: 'visible' });
+      const cover = await sender.locator('#cover').inputValue();
+      await receiver.locator('#receive-mode').click();
+      await receiver.locator('#received').fill(cover);
+      await receiver.locator('#decrypt').click();
+      await receiver.locator('#plain-result').waitFor({ state: 'visible' });
+      assert.equal(await receiver.locator('#plaintext').textContent(), message);
+    }
+  } finally { await chrome.close(); await edge.close(); }
+});
 
 test('unsupported crypto fails closed; denied clipboard offers manual selection', { timeout: 30_000 }, async () => {
   const browser = await chromium.launch({ channel: channels[0], headless: true });

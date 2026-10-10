@@ -1,6 +1,6 @@
-import { bytesToText, createPair, decryptBytes, encryptBytes, importPair, MAX_MESSAGE_BYTES, textToBytes } from './crypto.ts';
+import { bytesToText, createPair, decryptBytes, encryptBytesV2, importPair, MAX_MESSAGE_BYTES, textToBytes } from './crypto.ts';
 import type { PairKey } from './crypto.ts';
-import { chooseTopic, decodeCover, encodeCover, TOPIC_NAMES } from './codec.ts';
+import { ACTS, chooseProfile, decodeMessageCover, encodeDialogue, TOPICS } from './dialogue.ts';
 
 function el<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -96,6 +96,7 @@ function resetSession(): void {
   });
   input('verified').checked = false;
   el<HTMLSelectElement>('topic').value = 'auto';
+  el<HTMLSelectElement>('act').value = 'auto';
   for (const id of ['generated-panel', 'verify-panel', 'active-pair']) el(id).hidden = true;
   for (const id of ['setup-panel', 'setup-controls', 'message-gate']) el(id).hidden = false;
   el<HTMLDetailsElement>('setup-panel').open = true;
@@ -167,16 +168,17 @@ el('send-form').addEventListener('submit', (event) => {
   const key = pair.key;
   const message = area('message').value;
   const selected = el<HTMLSelectElement>('topic').value;
-  const topic = selected === 'auto' ? chooseTopic(area('context').value) : Number(selected);
+  const selectedAct = el<HTMLSelectElement>('act').value;
+  const profile = chooseProfile(area('context').value, selected === 'auto' ? undefined : Number(selected), selectedAct === 'auto' ? undefined : Number(selectedAct));
   clearCover();
   void run(async () => {
     const bytes = textToBytes(message);
     let packet: Uint8Array<ArrayBuffer>;
-    try { packet = await encryptBytes(key, bytes, topic); } finally { bytes.fill(0); }
-    const cover = encodeCover(packet);
+    try { packet = await encryptBytesV2(key, bytes, profile); } finally { bytes.fill(0); }
+    const cover = encodeDialogue(packet);
     return () => {
       area('cover').value = cover;
-      el('cover-stats').textContent = `${TOPIC_NAMES[topic]} · ${cover.length.toLocaleString()} characters · Template-based Persian`;
+      el('cover-stats').textContent = `${TOPICS[Math.floor(profile / ACTS.length)]} · ${ACTS[profile % ACTS.length]} · ${cover.length.toLocaleString()} characters · Dialogue v2`;
       el('cover-result').hidden = false;
       feedback('Cover text is ready. Copy all of it into your existing messenger.');
     };
@@ -190,7 +192,7 @@ el('receive-form').addEventListener('submit', (event) => {
   const cover = area('received').value;
   clearPlain();
   void run(async () => {
-    const bytes = await decryptBytes(key, decodeCover(cover));
+    const bytes = await decryptBytes(key, decodeMessageCover(cover));
     let text: string;
     try { text = bytesToText(bytes); } finally { bytes.fill(0); }
     return () => {
@@ -203,7 +205,7 @@ el('receive-form').addEventListener('submit', (event) => {
   });
 });
 
-for (const id of ['message', 'context', 'topic']) {
+for (const id of ['message', 'context', 'topic', 'act']) {
   el(id).addEventListener('input', () => {
     cancelPending();
     clearCover();
@@ -242,6 +244,7 @@ button('reply').addEventListener('click', () => {
   if (!openedCover) return;
   area('context').value = openedCover;
   el<HTMLSelectElement>('topic').value = 'auto';
+  el<HTMLSelectElement>('act').value = 'auto';
   clearCover();
   area('message').value = '';
   countBytes();
@@ -265,7 +268,7 @@ async function checkBrowser(): Promise<void> {
   try {
     if (!window.isSecureContext || !crypto?.subtle) throw new Error('Native Web Crypto is not available for this local file.');
     const probe = await createPair();
-    const encrypted = await encryptBytes(probe.key, new Uint8Array([7]), 0);
+    const encrypted = await encryptBytesV2(probe.key, new Uint8Array([7]), 0);
     const decrypted = await decryptBytes(probe.key, encrypted);
     if (decrypted[0] !== 7) throw new Error('Browser encryption self-check failed.');
     supported = true;

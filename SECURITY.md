@@ -18,7 +18,7 @@ Both peers use the same key. Either can decrypt or create any pair message. Ther
 
 Random nonces have a nonzero collision probability. This is a small-volume manual prototype, not a high-volume protocol. There is no persistent pair-wide message counter or automatic key rotation. Restarting does not rotate a reused key. Production use needs explicit lifecycle/volume limits and independent review.
 
-Topic and approximate plaintext byte length are public. Cover wording that normalizes to the same encoded bytes is intentionally equivalent; punctuation and spacing are not authenticated as literal visible text. The decoded header, nonce, and encrypted payload are protected by GCM verification.
+Theme, reply act and encoded packet length are public. In v2, fixed byte packing can shorten Persian UTF-8 before encryption, so exposed size is packed size, not necessarily original size. It is not length hiding. Packing has no shared or adaptive dictionary. Cover wording that normalizes to the same encoded bytes, including the two openings for one profile, is intentionally equivalent; literal punctuation and spacing are not authenticated. The decoded version/profile header, nonce and encrypted payload are protected by GCM verification. Unpacking happens only after authentication and is bounded to 2,048 output bytes.
 
 ## On-device handling
 
@@ -30,6 +30,6 @@ Do not use an untrusted HTML copy. Its content security policy blocks external r
 
 ## Cover text
 
-The phrase tables are public. Covers can be recognized, decoded to ciphertext, and statistically detected. Naturalness is best effort; uniform phrase choices are not modeled on real conversation frequencies. No claims of steganographic security, plausible deniability, censorship resistance, or undetectability are made. Topic matching offers only a rough continuation of visible conversation.
+The grammar tables are public. Covers can be recognized, decoded to ciphertext, and statistically detected. Naturalness is best effort; uniform phrase choices are not modeled on real conversation frequencies. No claims of steganographic security, plausible deniability, censorship resistance, or undetectability are made. Six bounded themes, basic dialogue-act matching, and staged clause structures provide rough continuity only. They do not understand arbitrary questions or reliably interpret negation. Public context never comes from private-message text.
 
-Messages are bounded to 2,048 bytes and cover inputs to 180,000 UTF-16 code units. Recognized copy/paste transformations are specified in [FORMAT.md](docs/FORMAT.md). Unknown/missing words, invalid frames, unsupported versions, and failed tags raise explicit errors. There is no guessing or unauthenticated recovery mode.
+Messages are bounded to 2,048 bytes and cover inputs to 180,000 UTF-16 code units. Recognized copy/paste transformations are specified in [FORMAT.md](docs/FORMAT.md) and [FORMAT-V2.md](docs/FORMAT-V2.md). Unknown/missing words, invalid frames, unsupported versions, and failed tags raise explicit errors. There is no guessing or unauthenticated recovery mode.

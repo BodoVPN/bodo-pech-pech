@@ -14,7 +14,7 @@
       <div class="brand"><span class="wordmark" lang="fa" dir="rtl">پچ‌پچ</span><div><h1>Bodo Pech Pech</h1><p>A private message. A Persian conversation.</p></div></div>
       <span class="file-badge">One file. Entirely local.</span>
     </header>
-    <div class="notice"><strong>Experimental prototype</strong><span>Template-based cover text can sound repetitive and can be detected. This is not an audited secure messenger.</span></div>
+    <div class="notice"><strong>Experimental prototype</strong><span>Fixed Persian dialogue rules keep this file small. Long covers still sound artificial and can be detected. This is not an audited secure messenger.</span></div>
     <p id="capability" role="status">Checking this browser’s encryption support…</p>
     <noscript><p class="error">JavaScript is required. Open this saved HTML in a browser that allows JavaScript and Web Crypto for local files.</p></noscript>
     <main>
@@ -66,15 +66,17 @@
               <summary>Continue the visible conversation</summary>
               <label for="context">Recent visible Persian conversation (optional)</label>
               <textarea id="context" lang="fa" dir="rtl" rows="3" maxlength="180000" spellcheck="false" autocomplete="off" placeholder="متن گفت‌وگوی قبلی…"></textarea>
-              <p class="small">A local keyword match chooses a topic. It does not understand the conversation or use a language model.</p>
+              <p class="small">Simple local rules recognize invitations, greetings and questions, then stay within one of six themes. They cannot understand arbitrary conversation. Your private message never chooses the theme.</p>
+              <label for="act">How should the visible reply begin?</label>
+              <select id="act"><option value="auto">Follow context</option><option value="0">Continue the topic</option><option value="1">Greet / check in</option><option value="2">Acknowledge an invitation</option><option value="3">Respond to a question</option><option value="4">Acknowledge</option></select>
             </details>
-            <div class="compose-actions"><div><label for="topic">Cover topic</label><select id="topic"><option value="auto">Follow context</option><option value="0">Everyday life</option><option value="1">Food and tea</option><option value="2">Getting outside</option></select></div><button id="encrypt" type="submit" disabled>Make Persian cover text</button></div>
+            <div class="compose-actions"><div><label for="topic">Cover theme</label><select id="topic"><option value="auto">Follow context</option><option value="0">Rest and a chat</option><option value="1">Tea and a snack</option><option value="2">A nearby walk</option><option value="3">Work / study routine</option><option value="4">Music at home</option><option value="5">A short trip</option></select></div><button id="encrypt" type="submit" disabled>Make Persian cover text</button></div>
           </form>
           <section id="cover-result" class="result" hidden aria-labelledby="cover-heading">
             <div class="result-heading"><h2 id="cover-heading">Ready for your messenger</h2><button id="copy-cover" class="secondary" type="button">Copy cover text</button></div>
             <p id="cover-stats" class="small"></p>
             <textarea id="cover" lang="fa" dir="rtl" readonly rows="8" aria-label="Persian cover text" spellcheck="false" autocomplete="off"></textarea>
-            <p class="small">Send the entire text as one message. Do not rephrase, translate, or shorten it. Messenger size limits may require a shorter private message.</p>
+            <p class="small">Read the cover before sending. Generate again for different wording; do not edit, translate or shorten it. Send the entire result. Messenger limits may require a shorter private message.</p>
           </section>
         </div>
         <div id="receive-panel" hidden>
@@ -97,12 +99,12 @@
     </main>
     <footer>
       <details><summary>What this file does and does not protect</summary><div class="limits">
-        <p>This file uses your browser’s AES-256-GCM encryption with a fresh random nonce per message. The Persian phrases are a reversible encoding, not encryption by themselves. The format exposes approximate message size and the selected cover topic.</p>
+        <p>This file uses your browser’s AES-256-GCM encryption with a fresh random nonce per message. Exact bytes are packed losslessly before encryption when that saves space. Persian dialogue rules carry the encrypted bytes; the rules are not encryption. The cover exposes its theme, reply style and packed message size.</p>
         <p>There is no forward secrecy, replay protection, sender identity proof, or protection against a compromised device, browser extension, keyboard, clipboard service, or altered copy of this HTML file. A leaked pair code exposes past and future messages made with it. Use a separate new code for each pair.</p>
         <p>The file makes no network requests, installs nothing, and does not save keys, messages, or context to browser storage. Browser and operating-system memory, session recovery, input history, and the clipboard are outside that guarantee. Clearing drops references; secure memory erasure is not guaranteed.</p>
-        <p>Keep a trusted copy of this HTML file. Open it directly in a full browser; file previewers may not run JavaScript. Desktop Chrome and Edge are the initial verification targets. Mobile file handling and Safari/Firefox need separate testing.</p>
+        <p>Keep a trusted copy of this HTML file. Open it directly in a full browser; file previewers may not run JavaScript. Windows Chrome and Edge are tested. Galaxy A51-class Android phones are a design target, but actual Android file handling and performance still need device testing.</p>
       </div></details>
-      <span>Prototype v0.1 · Format v1</span>
+      <span>Prototype v0.2 · Sends v2, reads v1 + v2 · No AI</span>
     </footer>
   </div>
   <script>__SCRIPT__</script>

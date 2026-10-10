@@ -1,60 +1,54 @@
 # Bodo Pech Pech
 
-An experimental, offline **single HTML file** for two people to encrypt messages, encode the encrypted bytes into Persian cover text, and exchange that text through an existing messenger.
+An experimental **single offline HTML file** for two people to encrypt messages, carry the encrypted bytes in Persian cover text, and exchange that text through an existing messenger. No AI, model, installation, server, account, runtime download or external API.
 
-The first prototype is implemented. It is **not an audited secure messenger**. Its cover uses a fixed phrase grammar: readable but repetitive, sometimes awkward, and readily recognizable. There is no claim of undetectability or human-like conversation.
+V2 uses six bounded themes and a reversible dialogue grammar. It recognizes simple greetings, invitations, questions and acknowledgements; varies sentence structures; avoids adjacent subject/structure repetition; and moves from observations to preferences to tentative continuation. It also packs Persian UTF-8 losslessly before encryption when that saves space. **Long covers still sound artificial and remain detectable. This is not an audited secure messenger.**
 
 ## Use the saved file
 
-1. Save the [ready-to-use HTML file](bodo-pech-pech.html) from a trusted copy of this repository (use GitHub's **Download raw file**, not the source page). Open it directly in a full browser. No server, account, installation, extension, or internet connection is required.
-2. One person selects **Create a new pair code**. Share this secret in person or through an already trusted confidential channel. Do not send it with the cover text or in a channel you assume is being observed.
-3. The other person pastes the code and selects **Use this code**. Compare all six fingerprint groups in person or over an authenticated channel, then both confirm setup.
-4. Write the real message and optionally paste recent visible Persian conversation. Choose **Make Persian cover text**, then **Copy cover text** and paste the entire result into your messenger.
-5. Your partner selects **Open a message**, pastes the complete cover text, and selects **Open private message**. Plaintext appears only after authentication succeeds. **Write a reply** carries the visible cover text into local context.
+1. Save [bodo-pech-pech.html](bodo-pech-pech.html) from a trusted copy of this repository. On GitHub, use **Download raw file**. Open that file directly in a full browser.
+2. One person chooses **Create a new pair code**. Exchange the code in person or through an already trusted confidential channel, never alongside the cover text.
+3. The partner pastes it and chooses **Use this code**. Compare every fingerprint group in person or over an authenticated channel, then both confirm setup.
+4. Write the private message. Optionally paste the recent **visible** Persian conversation, or select a theme/reply style. Choose **Make Persian cover text**.
+5. Read the result. Generate again if you prefer different wording; do not manually rephrase it. Copy the entire cover into your messenger.
+6. Your partner chooses **Open a message**, pastes the complete cover and chooses **Open private message**. Plaintext appears only after authentication. **Write a reply** continues the visible theme without repeating its greeting.
 
-The code disappears after setup. The key stays only in the tab's memory. Refreshing, closing, or **Clear key and messages** ends the session; both people need the same code again to reopen earlier messages. Keep it in a password manager if retention is needed. This page does not store it for you. Use a different generated code for every pair. Clipboard history and synchronization are outside the page's control.
+Keys, messages and context stay in the tab's memory. Reloading, closing or **Clear key and messages** ends the session. The pair code disappears after confirmation; keep it in your password manager if you need it again. The application does not save it. Clipboard history/sync is controlled by your device. If automatic copying is unavailable, the page selects the text for manual copying.
 
-If automatic copy is unavailable, the page selects the text and asks you to use the browser's Copy command. File previewers may not execute JavaScript; use an actual browser.
+Both people should use the new file to exchange v2 messages. Existing BPP1 pair codes work, and **v1 messages still decode**. An old v1 file cannot read v2. Leave a working old tab alone until you have retained any setup code/messages you need.
 
-## Offline behavior and support
+## Size, speed and support
 
-Everything for setup, encryption, encoding, decoding, and decryption is bundled into the HTML. There are no remote fonts, model downloads, analytics, runtime packages, API calls, backend, or service worker. A content security policy also blocks network connections and external resources.
+The deliverable is about **65 KiB**, including all JavaScript, CSS and grammar data. Its hashed content security policy blocks external resources and connections. Runtime behavior does not require a GPU, WASM engine, companion file or internet access. The existing messenger supplies transport and may need its own network.
 
-The existing messenger supplies transport and may need a network of its own. Bodo Pech Pech is not a replacement messaging network and cannot make an unavailable messenger work.
+Fresh Windows measurements reduced the representative 67-byte Persian message from about **3,000 to 1,850 cover characters**. Send/open operations took milliseconds on the tested desktop. These are measured examples, not universal bounds or phone-performance promises. See the [comparison and verification evidence](docs/VERIFICATION.md), including full covers, exact counts, startup and memory metrics.
 
-Verified under `file://` on Windows with **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**, using isolated browser contexts with networking disabled before initial load. Both passed setup, Unicode exchange, reply, and negative cases with zero HTTP requests. See [verification evidence](docs/VERIFICATION.md). Phone-width layout was tested; Android, iOS, Safari, Firefox, and other operating systems have **not** been verified. Local file opening policies vary. The page checks native crypto support and disables setup when unavailable.
+The actual saved file was exercised offline under `file://` in Windows **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**, including exchanges between those browsers. Galaxy A51-class and similar budget Android phones are the design target, but **Android local-file opening, speed and memory have not been verified on a device**. Follow the [manual Android check](docs/ANDROID-CHECK.md). A narrow desktop screenshot is not phone verification. File previewers may not execute JavaScript; the page checks native crypto support before enabling setup.
 
-## Limits that matter
+## Limits
 
-- Message size: 1–2,048 UTF-8 bytes. Even short messages create long covers. A measured 67-byte Persian message needed roughly 3,000 cover characters. At the limit, expect roughly 60,000 characters; messenger limits may require shorter messages.
-- Reply context uses a local keyword match for everyday life, food/tea, or getting outside. It does not understand conversation. The private message never selects the cover topic.
-- Spaces, punctuation, selected formatting marks, and common Persian/Arabic variants can change during copy/paste. Rewording, translating, losing sentences, adding sender names, or truncation will fail. Send the full cover text.
-- Native AES-256-GCM protects message bytes with a generated 256-bit pair key, fresh random 96-bit nonce, and 128-bit tag. The phrase codec is reversible encoding, not a cryptographic algorithm.
-- No forward secrecy, replay protection, individual sender authentication, secure memory erasure, or protection from compromised devices, browsers, extensions, or altered HTML. A leaked code exposes old/new messages and allows forgery.
-- Valid UTF-8 message bytes are preserved without normalization by the protocol. Browser textareas use LF line endings, so UI text is encrypted as supplied by the control, not as an arbitrary binary file. The byte API preserves all bytes.
+- Private messages: 1–2,048 original UTF-8 bytes. Even a short message creates a long cover; messenger limits may require shorter messages. ASCII and mixed Unicode usually gain less than Persian from packing.
+- Context rules use only visible conversation and explicit controls. They cannot understand arbitrary meaning, factual questions or negation reliably. Supported themes are rest/chat, tea/snacks, a nearby walk, work/study routine, music at home and a short trip.
+- Covers tolerate documented punctuation/spacing changes and common Persian/Arabic variants. Added words, sender names, paraphrasing, translation, omission and truncation fail. Public theme/reply-style changes cannot bypass authentication.
+- AES-256-GCM uses a generated 256-bit pair key, a fresh 96-bit nonce, a 128-bit tag and authenticated version/profile bytes. The grammar and packing are reversible representations, not cryptography.
+- No forward secrecy, replay protection, individual sender identity proof, secure memory erasure or compromised-device protection. A leaked pair code exposes old/new messages and permits forgery.
+- The byte APIs preserve exact bytes. Textareas use LF line endings; the UI encrypts the text supplied by the browser control. Packing never normalizes the private message.
 
-See [format and design](docs/FORMAT.md) and [security boundaries](SECURITY.md).
+See [v2 format](docs/FORMAT-V2.md), [legacy v1 format](docs/FORMAT.md) and [security boundaries](SECURITY.md).
 
-## Build and check the source
+## Build and verify
 
-Developers need Node.js 24+ and npm. Users of the finished HTML do not.
+Developers need Node.js 24+ and npm. Users need only the finished HTML.
 
 ```sh
 npm ci
 npm run build
-```
-
-The output is `bodo-pech-pech.html` at the repository root. This generated file is committed so users can download it directly. Rebuild it when source changes; do not hand-edit it. Double-click it or choose **Open with** your browser; no local web server is needed. Distribute that one file, not the source template in `src/index.html`.
-
-```sh
-npm run typecheck
-npm run lint
-npm test
-npm run test:browser
-# Or all checks:
 npm run check
+node scripts/compare.mjs
 ```
 
-Browser checks use installed Chrome and Edge through Playwright. They fail when a requested browser is missing; they do not silently skip. For Chrome alone, set `BROWSER_CHANNELS=chrome` (PowerShell: `$env:BROWSER_CHANNELS = 'chrome'`) before browser checks. Tests open the generated file directly, never a localhost substitute. Screenshots go to ignored `test-results/`.
+The build writes `bodo-pech-pech.html` at the repository root. That generated deliverable is committed; rebuild after source changes. Do not distribute the unbundled `src/index.html`.
 
-The source is plain TypeScript, CSS, and HTML, bundled by esbuild. No application framework is needed. TypeScript 6 is pinned because the installed ESLint TypeScript tooling requires TypeScript below 6.1. No license has been chosen.
+Checks run TypeScript, ESLint with zero warnings, protocol tests, and browser tests using installed Chrome and Edge. Missing requested browsers fail. For Chrome-only development checks, set `BROWSER_CHANNELS=chrome`; cross-browser validation then requires a later full run. All browser tests load real saved files, without substituting localhost. The comparison script uses the pinned v1 artifact from Git history and writes fresh measurements under ignored `work/comparison/`. Test screenshots are under ignored `test-results/`.
+
+Source is plain TypeScript/CSS/HTML bundled by esbuild. There are no application runtime dependencies. No project license has been chosen. Earlier model investigation was stopped; a short [developer note](docs/MODEL-NOTE.md) records why no AI is shipped.

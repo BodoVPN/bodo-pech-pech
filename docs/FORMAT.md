@@ -1,8 +1,10 @@
-# Format v1 and design decisions
+# Legacy format v1 and shared setup
+
+This page preserves the v1 wire specification. New messages use [format v2](FORMAT-V2.md), with a stateful dialogue grammar, authenticated theme/act profile, and exact byte packing. New files automatically read both formats. V1 tables remain unchanged.
 
 ## Architecture
 
-`src/crypto.ts` owns key import and authenticated encryption. `src/codec.ts` converts packets to/from Persian phrases and selects a topic from visible context. `src/main.ts` owns transient UI state. None uses a network API. `scripts/build.mjs` bundles the code into an IIFE, inlines styles, and hashes both blocks into a restrictive CSP. The output is one HTML file without module imports, fetched assets, a service worker, or a server.
+`src/crypto.ts` owns key import and authenticated encryption. `src/codec.ts` preserves the v1 phrase codec. `src/dialogue.ts` and `src/dialogue-data.ts` implement v2, and `src/packing.ts` provides its reversible byte representation. `src/main.ts` owns transient UI state. None uses a network API. `scripts/build.mjs` bundles the code into an IIFE, inlines styles, and hashes both blocks into a restrictive CSP. The output is one HTML file without module imports, fetched assets, a service worker, or a server.
 
 The platform decision is a portable local HTML file. Standard Web Crypto avoids shipping another cipher implementation. A shared random secret with explicit trusted setup is the smallest defensible setup for this prototype; it is not a substitute for a reviewed asynchronous messaging protocol.
 
@@ -56,13 +58,13 @@ Only cover text is normalized, never the private message:
 
 No other characters/words are discarded. Space/punctuation removal is unambiguous because each slot's phrase table is prefix-free after normalization. Added sender names, emoji, translated words, missing clauses, truncation, duplicated sentences, bad padding, and malformed lengths fail. A valid alternate phrase may decode to changed ciphertext; GCM rejects it. Cover input is capped at 180,000 UTF-16 code units before normalization.
 
-## Reply context and local-model assessment
+## Legacy reply context and limitations
 
 Context stays on-device. Recognized cover openers preserve the topic on replies. Otherwise, Persian keywords choose food/tea or outdoors, defaulting to everyday life. Explicit topic selection overrides the heuristic. Context is not in the encrypted payload and is not required for decoding. It influences only the public topic; private message content is never used to select a topic.
 
-A local generative model was considered, not downloaded or benchmarked. Transformers.js supports local WASM/WebGPU inference and quantized models, but platform support and model assets add requirements. Even ideal 4-bit weights for a 0.5-billion-parameter model take about 250 MB before runtime, metadata, and working memory: a theoretical estimate, not a measured download size. Persian fluency and target-phone performance remain unvalidated. Generation alone does not preserve an arbitrary encrypted payload; a future model-based codec needs specified, deterministic reversible encoding shared by both peers, not just plausible paraphrases.
+The current direction is fully non-AI. Earlier model experiments were stopped at the user's request; see the short [developer note](MODEL-NOTE.md). No model or model runtime is included in the application.
 
-The fixed phrase codec keeps the first file small and reproducible. Its weaknesses are long, repetitive, detectable cover and shallow context use. This demonstrates reversibility, not natural covert conversation.
+The original fixed phrase codec demonstrated reversibility in a small file. Its weaknesses are long, repetitive, detectable cover and shallow context use. V2 improves compactness and bounded dialogue structure while retaining explicit limits on naturalness and detectability.
 
 ## Primary documentation consulted
 

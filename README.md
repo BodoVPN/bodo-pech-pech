@@ -20,12 +20,12 @@
 </p>
 <p align="center"><sub>BodoPechPech v0.5.0, offline in Windows Chrome. Switch light/dark from the header on any screen. No message content is shown.</sub></p>
 
-**[v0.5.0](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.5.0)** rebuilds every screen with React and genuine shadcn/ui components: a consistent monochrome theme, clear forms, large controls, and Persian/English layouts. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
+**[v0.5.0](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.5.0)** rebuilds every screen with React and genuine shadcn/ui components: a quiet monochrome canvas, compact task screens, comfortable controls, and Persian/English layouts. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
 
 ## Quick start
 
 1. **Download and open** the HTML in Windows Chrome or Edge. iPhone/iPad attachment previews are not supported; Android still needs real-device testing.
-2. **One person creates the conversation.** Choose a password or **Generate**, then **Make & save conversation file**.
+2. **One person creates the conversation.** Choose a password or **Generate**, then **Save conversation file**.
 3. **Share that same saved file privately.** Give the other person a copy and tell them the password separately. Both people need copies of **the same file**, not two independently created conversations.
 4. **Open, unlock, and talk.** **Write a message** prepares Persian text to copy into your messenger. **Read a message** opens the received text you paste in. Copy all of it without changing the words.
 
@@ -35,13 +35,13 @@
 <h2>شروع سریع</h2>
 <ol>
   <li>فایل را <strong>دانلود کنید و در Chrome یا Edge ویندوز باز کنید</strong>. پیش‌نمایش پیوست iPhone و iPad پشتیبانی نمی‌شود؛ اندروید هنوز به آزمایش واقعی نیاز دارد.</li>
-  <li><strong>یک نفر گفت‌وگو را بسازد:</strong> رمز انتخاب کند یا «ساخت خودکار» را بزند، سپس «ساخت و ذخیرهٔ فایل گفت‌وگو» را بزند.</li>
+  <li><strong>یک نفر گفت‌وگو را بسازد:</strong> رمز انتخاب کند یا «ساخت خودکار» را بزند، سپس «ساخت و ذخیرهٔ فایل» را بزند.</li>
   <li><strong>همان فایل ذخیره‌شده را خصوصی به نفر دوم بدهید</strong> و رمز را جداگانه برسانید. هر دو باید نسخه‌ای از <strong>همان فایل</strong> داشته باشید، نه دو گفت‌وگوی جدا.</li>
   <li>فایل خصوصی را باز کنید و رمز را وارد کنید. <strong>نوشتن پیام</strong> متن فارسی برای کپی در پیام‌رسان می‌سازد؛ در <strong>خواندن پیام</strong> متن دریافتی را بچسبانید. همهٔ متن را بدون تغییر کلمات کپی کنید.</li>
 </ol>
 <p>اگر ویندوز فایل خصوصی را باز نمی‌کند، فایل اولیه را در Chrome یا Edge باز کنید، <strong>باز کردن گفت‌وگوی ذخیره‌شده</strong> را بزنید، فایل خصوصی قبلی را انتخاب کنید و رمز همان فایل را وارد کنید. فایل فقط روی همین دستگاه خوانده می‌شود؛ کلید، فایل و تنظیمات امنیتی تغییر نمی‌کنند. پس از بارگذاری دوبارهٔ فایل اولیه، فایل خصوصی را دوباره انتخاب کنید.</p>
-<p>دکمهٔ <strong>حالت روشن / حالت تیره</strong> بالای همهٔ صفحه‌هاست. رنگ اولیه از دستگاه گرفته می‌شود؛ پس از انتخاب شما، تغییر رنگ دستگاه آن را عوض نمی‌کند. با بارگذاری دوباره، رنگ دستگاه دوباره استفاده می‌شود؛ تنظیمی ذخیره نمی‌شود.</p>
-<p>رمز را نگه دارید؛ فراموشی آن ممکن است دسترسی را از بین ببرد. برای گفت‌وگوی قبلی، «محافظت از گفت‌وگوی قبلی» را بزنید؛ نسخه‌های قدیمیِ بدون محافظت با این کار امن یا باطل نمی‌شوند.</p>
+<p>دکمهٔ <strong>خورشید / ماه</strong> بالای همهٔ صفحه‌هاست. رنگ اولیه از دستگاه گرفته می‌شود؛ پس از انتخاب شما، تغییر رنگ دستگاه آن را عوض نمی‌کند. با بارگذاری دوباره، رنگ دستگاه دوباره استفاده می‌شود؛ تنظیمی ذخیره نمی‌شود.</p>
+<p>رمز را نگه دارید؛ فراموشی آن ممکن است دسترسی را از بین ببرد. برای گفت‌وگوی قبلی، در «درباره»، «محافظت از گفت‌وگوی قبلی» را بزنید؛ نسخه‌های قدیمیِ بدون محافظت با این کار امن یا باطل نمی‌شوند.</p>
 </div>
 
 Passwords need **8 characters, a number and a symbol**; Persian/Arabic digits work too. **Generate** fills an editable random **16-character** suggestion. Keep it safe—there is no password reset. [Moving an old file or setup code?](#keep-an-existing-conversation)
@@ -52,9 +52,9 @@ Passwords need **8 characters, a number and a symbol**; Persian/Arabic digits wo
 </p>
 <p align="center"><sub>Unlock once, then choose Write or Read. Narrow desktop-browser views—not Android test results.</sub></p>
 
-Switching to your messenger and **Done · clear messages** keep this tab unlocked. Done clears message fields and reply context. Closing, reloading or navigating away requires unlocking again.
+Switching to your messenger and **Done** keep this tab unlocked. Done clears message fields and reply context. Closing, reloading or navigating away requires unlocking again.
 
-Use **Light mode / Dark mode** in the header on any screen. The button names the mode it will switch to. The initial theme follows your system; once you choose, later system changes do not override it. Your choice lasts until reload or close. No preference is stored, and switching themes does not clear a draft or lock the conversation.
+Use the **sun/moon button** in the header on any screen to switch light/dark. Its accessible name and tooltip describe the destination mode. The initial theme follows your system; once you choose, later system changes do not override it. Your choice lasts until reload or close. No preference is stored, and switching themes does not clear a draft or lock the conversation.
 
 ## How it works
 
@@ -201,7 +201,7 @@ For a **password-protected file**, choose **Open saved conversation** in the sta
 
 Saved HTML files contain their own app version. To use the rebuilt interface with an existing conversation, open the latest public starter and select your old private file there. Do not create a new conversation to upgrade the interface.
 
-For an **older unprotected file**, choose a password in the starter, open **Protect an older conversation**, and select the old private HTML file **or** paste its BPP1 setup code. Save the protected copy. It keeps the original key and reads existing v1/v2 messages; old HTML is read as data, never executed.
+For an **older unprotected file**, choose a password in the starter, open **About → Protect an older conversation**, and select the old private HTML file **or** paste its BPP1 setup code. Save the protected copy. It keeps the original key and reads existing v1/v2 messages; old HTML is read as data, never executed.
 
 Existing protected files still accept their original passwords, even if they do not meet today's creation rules. **Migration does not secure or revoke old unprotected copies.** [Migration details →](docs/KEY-STORAGE.md#runtime-and-migration)
 
@@ -213,7 +213,7 @@ Existing protected files still accept their original passwords, even if they do 
 | **Android / Galaxy A51-class phones** | Target platform; **not verified on a real device**. |
 | **iPhone / iPad, including Telegram attachments** | **Unsupported attachment-opening route; no working iOS path verified.** A preview is not an interactive browser. |
 
-The current single file is about **790 KiB**, with its font, CSS and script embedded. See [current UI verification](docs/THEME-VERIFICATION.md), [opening help and iOS findings](docs/OPENING-FILES.md), [Windows opening verification](docs/OPENING-VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
+The current single file is about **777 KiB**, with its font, CSS and script embedded. See [current UI verification](docs/THEME-VERIFICATION.md), [opening help and iOS findings](docs/OPENING-FILES.md), [Windows opening verification](docs/OPENING-VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
 
 ## Build and check
 

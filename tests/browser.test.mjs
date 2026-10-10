@@ -47,6 +47,7 @@ async function createFile(page, code) {
   await page.locator('#setup-panel').waitFor({ state: 'visible' });
   await page.locator('#setup-passphrase').fill(passphrase);
   if (code) {
+    await page.locator('#about-trigger').click();
     await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-code').fill(code);
   }
@@ -275,6 +276,7 @@ test('legacy code import keeps v1/v2 recovery; tampering and invalid setup fail 
     }
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
     await page.locator('#setup-passphrase').fill(passphrase);
+    await page.locator('#about-trigger').click();
     await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-code').fill('BPP1-"><script>alert(1)</script>'); await page.locator('#import').click();
     await page.locator('#error').waitFor({ state: 'visible' });
@@ -385,7 +387,7 @@ test('unsupported browser and CRLF copies fail safely or preserve hashed CSP', {
     const file = await createFile(page);
     const crlf = resolve(directory, 'crlf-private.html'); await writeFile(crlf, file.html.replace(/\r?\n/g, '\r\n'));
     await openFile(page, { url: pathToFileURL(crlf).href });
-    assert.equal(await page.locator('#home [data-slot=card-content]').evaluate((node) => getComputedStyle(node).display), 'grid'); clean();
+    assert.equal(await page.locator('.home-actions').evaluate((node) => getComputedStyle(node).display), 'grid'); clean();
     const unsupported = await context.newPage();
     await unsupported.addInitScript(() => Object.defineProperty(globalThis, 'isSecureContext', { value: false }));
     await unsupported.goto(fileUrl); await unsupported.locator('#error').waitFor({ state: 'visible' });
@@ -499,6 +501,7 @@ test('legacy HTML is imported only as data; original messages survive and no raw
       .replace('<body>', '<body><script>globalThis.legacyExecuted=true</script><img src="https://invalid.example/should-not-load">');
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
     await page.locator('#setup-passphrase').fill(passphrase);
+    await page.locator('#about-trigger').click();
     await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-file').setInputFiles({ name: 'old-private.html', mimeType: 'text/html', buffer: Buffer.from(old) });
     const file = await saveDownload(page, () => page.locator('#import').click());
@@ -579,10 +582,10 @@ test('all screens reflow in both themes and directions; password controls stay a
         assert.ok(input.width >= 48 && show.width >= 48 && show.height >= 48);
         assert.ok(input.right <= show.x + 0.5 || show.right <= input.x + 0.5);
         assert.ok(Math.abs(input.height - show.height) < 1, `Field controls have equal heights: ${JSON.stringify(geometry.password)}`);
-        if (geometry.generator) assert.ok(geometry.generator.y - group.bottom >= 15.5, 'Generate has at least 16px breathing room');
+        if (geometry.generator) assert.ok(group.y - geometry.generator.bottom >= 7.5, 'Generate stays in the field heading with a clear gap above the input');
         await page.locator(`#${prefix}-passphrase`).focus();
-        const focus = await page.locator(`#${prefix}-passphrase`).evaluate(node => ({ input: getComputedStyle(node).outlineStyle, border: getComputedStyle(node).borderTopWidth, group: getComputedStyle(node.parentElement).outlineWidth, offset: getComputedStyle(node.parentElement).outlineOffset }));
-        assert.deepEqual(focus, { input: 'none', border: '0px', group: '2px', offset: '3px' });
+        const focus = await page.locator(`#${prefix}-passphrase`).evaluate(node => ({ input: getComputedStyle(node).outlineStyle, border: getComputedStyle(node).borderTopWidth, group: getComputedStyle(node.parentElement).outlineWidth, groupStyle: getComputedStyle(node.parentElement).outlineStyle, offset: getComputedStyle(node.parentElement).outlineOffset }));
+        assert.deepEqual(focus, { input: 'none', border: '0px', group: '2px', groupStyle: 'solid', offset: '-2px' });
       }
     };
     const matrix = async (prefix) => {
@@ -616,11 +619,11 @@ test('all screens reflow in both themes and directions; password controls stay a
     }
     await unlockFile(page); await matrix();
     await page.locator('#send-mode').click();
-    assert.equal(await page.locator('#message').evaluate(node => getComputedStyle(node).outlineOffset), '4px');
+    assert.equal(await page.locator('#message').evaluate(node => getComputedStyle(node).outlineOffset), '-2px');
     await matrix();
     const cover = await write(page, 'Synthetic layout message 👋', false); await matrix();
     await page.locator('#clear').click(); await page.locator('#receive-mode').click();
-    assert.equal(await page.locator('#received').evaluate(node => getComputedStyle(node).outlineOffset), '4px');
+    assert.equal(await page.locator('#received').evaluate(node => getComputedStyle(node).outlineOffset), '-2px');
     await matrix();
     assert.equal(await read(page, cover, false), 'Synthetic layout message 👋'); await matrix();
   } finally { await browser.close(); }
@@ -635,6 +638,7 @@ test('Generate only fills the editable setup field, preserves legacy selection a
     let downloads = 0; page.on('download', () => { downloads++; });
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
     await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { globalThis.unwantedCopy = true; } } }));
+    await page.locator('#about-trigger').click();
     await page.locator('#legacy-setup-trigger').click();
     await page.locator('#import-code').fill(pair.code);
     await page.locator('#import-file').setInputFiles({ name: 'old-private.html', mimeType: 'text/html', buffer: Buffer.from(old) });
@@ -665,7 +669,7 @@ for (const channel of channels) test(`${channel}: monochrome brand and live syst
   const luminance = (value) => rgb(value).map((v) => v / 255).map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
   const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
   const checkTheme = async (page, theme) => {
-    await page.waitForFunction((theme) => getComputedStyle(document.documentElement).backgroundColor === (theme === 'dark' ? 'rgb(16, 16, 16)' : 'rgb(244, 244, 244)'), theme);
+    await page.waitForFunction((theme) => getComputedStyle(document.documentElement).backgroundColor === (theme === 'dark' ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)'), theme);
     const colors = await page.evaluate(() => {
       const styles = (selector) => getComputedStyle(document.querySelector(selector));
       return {
@@ -681,7 +685,7 @@ for (const channel of channels) test(`${channel}: monochrome brand and live syst
       if (name === 'focus') continue;
       const components = rgb(value); assert.ok(components.every((v) => v === components[0]), `${name} must be monochrome`);
     }
-    assert.equal(colors.page, theme === 'dark' ? 'rgb(16, 16, 16)' : 'rgb(244, 244, 244)');
+    assert.equal(colors.page, theme === 'dark' ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)');
     for (const [foreground, background] of [[colors.ink, colors.surface], [colors.muted, colors.surface], [colors.primaryInk, colors.primary], [colors.error, colors.errorSurface]]) assert.ok(contrast(foreground, background) >= 4.5);
     assert.ok(contrast(colors.fieldLine, colors.field) >= 3);
     return colors;
@@ -793,7 +797,13 @@ test('shadcn disclosures remain keyboard-operable and reflow with enlarged text 
   try {
     const page = await (await browser.newContext({ offline: true })).newPage(); const clean = observe(page);
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
-    for (const id of ['open-saved', 'legacy-setup', 'about']) {
+    await page.keyboard.press('Tab');
+    for (const id of ['theme', 'language', 'setup-show', 'generate-passphrase', 'generate']) {
+      await page.locator('#' + id).focus();
+      const focus = await page.locator('#' + id).evaluate(node => ({ style: getComputedStyle(node).outlineStyle, width: getComputedStyle(node).outlineWidth }));
+      assert.deepEqual(focus, { style: 'solid', width: '2px' }, id + ' has a visible keyboard focus outline');
+    }
+    for (const id of ['open-saved', 'about', 'legacy-setup']) {
       const trigger = page.locator(`#${id}-trigger`);
       await trigger.focus(); await page.keyboard.press('Enter');
       assert.equal(await trigger.getAttribute('aria-expanded'), 'true');

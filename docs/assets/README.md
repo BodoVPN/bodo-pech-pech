@@ -1,6 +1,6 @@
 # README screenshots
 
-These are unedited page screenshots of **BodoPechPech v0.5.0**, captured on 2026-10-10 in Windows Chrome 155.0.8059.39 with networking disabled. The captured HTML has SHA-256 `a316ddcf098942d0196a2fedc94b8d3ce61c7678804e92cd42a5ae93a7c0b303`. Earlier releases keep their original appearance and binaries. There is no browser chrome, personal tab content, visible password, conversation key, clipboard content or message text in the images.
+These are unedited page screenshots of **BodoPechPech v0.5.0**, captured on 2026-10-10 in Windows Chrome 155.0.8059.39 with networking disabled. The captured HTML has SHA-256 `afa708b68f21881462ceed2d5f30370eea93b976425bcb98f36a6e1976e4ec95`. Earlier releases keep their original appearance and binaries. There is no browser chrome, personal tab content, visible password, conversation key, clipboard content or message text in the images.
 
 | Image | Actual state | Viewport (full-page capture) |
 | --- | --- | --- |

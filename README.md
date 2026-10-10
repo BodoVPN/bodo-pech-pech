@@ -1,20 +1,22 @@
-<h1 align="center">پچ‌پچ · Pech Pech</h1>
+<h1 align="center">BodoPechPech · بدو پچ پچ</h1>
 
 <p align="center">Write a message. Send Persian cover text. Read the original on the other side.</p>
 <p align="center"><strong>One offline HTML file · No account · No installation · No AI</strong></p>
 
 <p align="center">
-  <a href="https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/bodo-pech-pech.html"><strong>Download the HTML / دریافت فایل</strong></a>
+  <a href="https://github.com/BodoVPN/bodo-pech-pech/raw/refs/heads/main/bodo-pech-pech.html"><strong>Download current HTML / دریافت فایل فعلی</strong></a>
   &nbsp; · &nbsp;
-  <a href="https://github.com/BodoVPN/bodo-pech-pech/releases/latest">Latest release</a>
+  <a href="https://github.com/BodoVPN/bodo-pech-pech/releases/latest">Tagged release</a>
   &nbsp; · &nbsp;
   <a href="#how-it-works">How it works</a>
 </p>
 
 <p align="center">
-  <img src="docs/assets/home-fa.png" width="800" alt="Pech Pech in Persian after unlocking: two large buttons for Write a message and Read a message, with an English language switch.">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/home-fa-dark.png"><img src="docs/assets/home-fa-light.png" width="800" alt="BodoPechPech in Persian after unlocking: the full بدو پچ پچ wordmark, paired-conversation icon, and Write a message and Read a message buttons."></picture>
 </p>
-<p align="center"><sub>Actual v0.4.0, running offline in Windows Chrome. No message content is shown.</sub></p>
+<p align="center"><sub>Current main-branch app, offline in Windows Chrome. Light and dark follow your system. No message content is shown.</sub></p>
+
+The current download includes the monochrome branding update shown here. The separately tagged **v0.4.0 release remains unchanged** with its earlier appearance.
 
 ## Quick start
 
@@ -37,12 +39,12 @@
 Passwords need **8 characters, a number and a symbol**; Persian/Arabic digits work too. **Generate** fills an editable random **16-character** suggestion. Keep it safe—there is no password reset. [Moving an old file or setup code?](#keep-an-existing-conversation)
 
 <p align="center">
-  <img src="docs/assets/unlock-en.png" width="280" alt="English unlock screen with an empty password field, Show button and one Unlock button.">
-  <img src="docs/assets/home-en.png" width="280" alt="The same English conversation after unlocking, with Write a message and Read a message buttons.">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/unlock-en-dark.png"><img src="docs/assets/unlock-en-light.png" width="280" alt="BodoPechPech English unlock screen with an empty password field, Show button and one Unlock button."></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/home-en-dark.png"><img src="docs/assets/home-en-light.png" width="280" alt="BodoPechPech in English after unlocking, with Write a message and Read a message buttons."></picture>
 </p>
 <p align="center"><sub>Unlock once, then choose Write or Read. Narrow desktop-browser views—not Android test results.</sub></p>
 
-Switching to your messenger and **Done · clear messages** keep this tab unlocked. Done clears message fields and reply context. Closing, reloading or navigating away requires unlocking again.
+Switching to your messenger and **Done · clear messages** keep this tab unlocked. Done clears message fields and reply context. Closing, reloading or navigating away requires unlocking again. The monochrome light/dark theme follows your system automatically, with no extra setup or saved preference.
 
 ## How it works
 
@@ -62,21 +64,21 @@ The public starter download has **no private conversation key**. Setup creates o
 flowchart TB
   accTitle: A message from sender to recipient
   accDescr: The sender locally packs and encrypts their message, then encodes the ciphertext as Persian cover text. The messenger transports the cover. The recipient locally decodes it, authenticates and decrypts it, then unpacks the original message.
-  A["WRITE · your device<br/>Your message → pack → encrypt"]:::local
+  A["Write · your device<br/>Your message → pack → encrypt"]:::local
   B["Persian cover text<br/>Public encoding of ciphertext"]:::cover
-  C["YOUR MESSENGER<br/>Sees cover text and transport metadata"]:::transport
-  D["READ · their device<br/>Decode → decrypt and verify → unpack"]:::local
+  C["Your messenger<br/>Sees cover text and transport metadata"]:::transport
+  D["Read · their device<br/>Decode → decrypt and verify → unpack"]:::local
   E["The original message"]:::local
   A --> B
   B -->|Copy and send| C
   C -->|Receive and paste| D
   D --> E
-  classDef local fill:#eaf3ff,stroke:#0969da,color:#1f2328
-  classDef cover fill:#f6f8fa,stroke:#59636e,color:#1f2328
-  classDef transport fill:#fff8e6,stroke:#9a6700,color:#1f2328,stroke-dasharray:5 3
+  classDef local fill:#f2f2f2,stroke:#444444,color:#202020
+  classDef cover fill:#ffffff,stroke:#707070,color:#202020
+  classDef transport fill:#ffffff,stroke:#444444,color:#202020,stroke-dasharray:5 3
 ```
 
-**Blue steps happen locally.** The messenger transports the cover text; it is not trusted to encrypt the private message. It can see the cover, participants, timing and length.
+**Shaded steps happen locally; the dashed box is the messenger.** It transports the cover text and is not trusted to encrypt the private message. It can see the cover, participants, timing and length.
 
 The receiver needs the conversation key to decrypt and authenticate the ciphertext. The app verifies it **before** showing the original text. A wrong key or modified message fails instead of producing a guessed message.
 
@@ -92,16 +94,16 @@ flowchart TB
   K["Random conversation key<br/>Generated once for this conversation"]:::secret
   W["Derive wrapping key<br/>PBKDF2 + random salt"]:::secret
   X["Encrypt the conversation key<br/>AES-256-GCM"]:::local
-  F["SAVED PRIVATE HTML<br/>Encrypted key + public salt, IV and parameters"]:::stored
+  F["Saved private HTML<br/>Encrypted key + public salt, IV and parameters"]:::stored
   U["Unlock locally<br/>Derive, decrypt and verify the saved key"]:::local
   P --> W
   W --> X
   K --> X
   X --> F
   F -->|Open with the same password| U
-  classDef secret fill:#eaf3ff,stroke:#0969da,color:#1f2328
-  classDef local fill:#f0f6ff,stroke:#0969da,color:#1f2328
-  classDef stored fill:#f6f8fa,stroke:#59636e,color:#1f2328
+  classDef secret fill:#f2f2f2,stroke:#444444,color:#202020
+  classDef local fill:#f2f2f2,stroke:#444444,color:#202020
+  classDef stored fill:#ffffff,stroke:#444444,color:#202020,stroke-dasharray:5 3
 ```
 
 This protects a **stolen, locked file** against access without the password, subject to password guessing and implementation limits. It does not protect an already-unlocked or compromised device. The password, derived wrapping key and raw conversation key are not saved in new exports.
@@ -139,7 +141,7 @@ Existing protected files still accept their original passwords, even if they do 
 | **Windows Chrome & Edge** | Actual saved-file, offline exchange and reply flows tested. |
 | **Android / Galaxy A51-class phones** | Target platform; **not verified on a real device**. |
 
-The single file is about **407 KiB**, with its font, CSS and script embedded. Open it in a full browser, not a file previewer. See [verification](docs/VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
+The current single file is about **411 KiB**, with its font, CSS and script embedded. Open it in a full browser, not a file previewer. See [current verification](docs/BRANDING-VERIFICATION.md), [v0.4.0 release verification](docs/VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
 
 ## Build and check
 
@@ -155,7 +157,7 @@ npm run check
 | Explore | Read more |
 | --- | --- |
 | Formats | [Message v2](docs/FORMAT-V2.md) · [Legacy v1](docs/FORMAT.md) · [Protected key storage](docs/KEY-STORAGE.md) |
-| Evidence | [Verification](docs/VERIFICATION.md) · [Historical codec comparison](docs/VERIFICATION-V2.md) |
+| Evidence | [Current verification](docs/BRANDING-VERIFICATION.md) · [v0.4.0 verification](docs/VERIFICATION.md) · [Historical codec comparison](docs/VERIFICATION-V2.md) |
 | Visuals | [Screenshot provenance](docs/assets/README.md) · [Font attribution](assets/fonts/vazirmatn/README.md) |
 
 Typography uses **Vazirmatn v33.003**, embedded with its SIL Open Font License 1.1 and attribution. No project software license has been selected. No AI is shipped; the [earlier model investigation](docs/MODEL-NOTE.md) is historical only.

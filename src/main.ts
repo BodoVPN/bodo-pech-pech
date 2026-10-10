@@ -17,6 +17,21 @@ const button = (id: string) => el<HTMLButtonElement>(id);
 let english = false;
 const translated = Array.from(document.querySelectorAll<HTMLElement>('[data-en]'), (node) => ({ node, fa: node.textContent ?? '' }));
 const t = (fa: string, en: string): string => english ? en : fa;
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+let chosenTheme: 'light' | 'dark' | undefined;
+function applyTheme(): void {
+  const theme = chosenTheme ?? (systemTheme.matches ? 'dark' : 'light');
+  document.documentElement.dataset.theme = theme;
+  const dark = theme === 'dark';
+  el('theme-label').textContent = dark ? t('حالت روشن', 'Light mode') : t('حالت تیره', 'Dark mode');
+  button('theme').setAttribute('aria-label', dark ? t('تغییر به حالت روشن', 'Switch to light mode') : t('تغییر به حالت تیره', 'Switch to dark mode'));
+}
+button('theme').addEventListener('click', () => {
+  chosenTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+});
+systemTheme.addEventListener('change', () => { if (!chosenTheme) applyTheme(); });
+applyTheme();
 let key: CryptoKey | undefined;
 let supported = false;
 let busy = false;
@@ -299,6 +314,7 @@ button('language').addEventListener('click', () => {
   translated.forEach(({ node, fa }) => { node.textContent = english ? node.dataset.en ?? fa : fa; });
   button('language').textContent = english ? 'فارسی' : 'English';
   button('language').lang = english ? 'fa' : 'en';
+  applyTheme();
   el('feedback').textContent = t(...status);
   el('error').textContent = t(...errorText);
   el('conversation').setAttribute('aria-label', t('گفت‌وگو', 'Conversation'));

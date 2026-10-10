@@ -549,20 +549,63 @@ test('edited input and page abandonment invalidate delayed KDF results without c
   } finally { await browser.close(); }
 });
 
-test('setup and unlock reflow at 320px and 200% text with accessible Show/Hide', { timeout: 30_000 }, async () => {
+test('all screens reflow in both themes and directions; password controls stay aligned with one focus ring', { timeout: 90_000 }, async () => {
   const browser = await chromium.launch({ channel: channels[0], headless: true });
   try {
     const page = await (await browser.newContext({ offline: true, viewport: { width: 320, height: 640 } })).newPage();
     const file = await createFile(page);
+    const checkLayout = async (prefix) => {
+      const geometry = await page.evaluate((prefix) => {
+        const box = (selector) => {
+          const rect = document.querySelector(selector).getBoundingClientRect();
+          return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height };
+        };
+        return {
+          width: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+          header: ['.brand', '#theme', '#language'].map(box),
+          password: prefix ? { group: box(`#${prefix}-form .password-field`), input: box(`#${prefix}-passphrase`), show: box(`#${prefix}-show`) } : null,
+          generator: prefix === 'setup' ? box('#generate-passphrase') : null,
+        };
+      }, prefix);
+      assert.ok(geometry.scrollWidth <= geometry.width, 'No horizontal page overflow');
+      for (const [i, a] of geometry.header.entries()) {
+        assert.ok(a.x >= 0 && a.right <= geometry.width + 0.5, 'Header stays inside viewport');
+        if (i > 0) assert.ok(a.height >= 48 && a.width >= 48, 'Header control touch target');
+        for (const b of geometry.header.slice(i + 1)) assert.ok(a.right <= b.x + 0.5 || b.right <= a.x + 0.5 || a.bottom <= b.y + 0.5 || b.bottom <= a.y + 0.5, 'Brand and header controls must not overlap');
+      }
+      if (geometry.password) {
+        const { group, input, show } = geometry.password;
+        for (const child of [input, show]) assert.ok(child.x >= group.x && child.right <= group.right + 0.5 && child.y >= group.y && child.bottom <= group.bottom + 0.5, 'Input and Show/Hide stay within one field');
+        assert.ok(input.width >= 48 && show.width >= 48 && show.height >= 48);
+        assert.ok(input.right <= show.x + 0.5 || show.right <= input.x + 0.5);
+        assert.ok(Math.abs(input.height - show.height) < 1, 'Field controls have equal heights');
+        if (geometry.generator) assert.ok(geometry.generator.y - group.bottom >= 15.5, 'Generate has at least 16px breathing room');
+        await page.locator(`#${prefix}-passphrase`).focus();
+        const focus = await page.locator(`#${prefix}-passphrase`).evaluate(node => ({ input: getComputedStyle(node).outlineStyle, border: getComputedStyle(node).borderTopWidth, group: getComputedStyle(node.parentElement).outlineWidth, offset: getComputedStyle(node.parentElement).outlineOffset }));
+        assert.deepEqual(focus, { input: 'none', border: '0px', group: '2px', offset: '-2px' });
+      }
+    };
+    const matrix = async (prefix) => {
+      for (const theme of ['light', 'dark']) {
+        if (await page.locator('html').getAttribute('data-theme') !== theme) await page.locator('#theme').click();
+        for (const language of ['fa', 'en']) {
+          if (await page.locator('html').getAttribute('lang') !== language) await page.locator('#language').click();
+          for (const width of [1360, 390, 360, 320]) {
+            await page.setViewportSize({ width, height: 900 });
+            for (const size of ['20px', '40px']) {
+              await page.locator('html').evaluate((node, fontSize) => { node.style.fontSize = fontSize; }, size);
+              await checkLayout(prefix);
+            }
+          }
+        }
+      }
+      await page.locator('html').evaluate(node => { node.style.fontSize = ''; });
+    };
     for (const [url, panel, prefix] of [[fileUrl, 'setup-panel', 'setup'], [file.url, 'unlock-panel', 'unlock']]) {
       await page.goto(url); await page.locator(`#${panel}`).waitFor({ state: 'visible' });
-      await page.locator('#language').click();
-      for (const size of ['20px', '40px']) {
-        await page.locator('html').evaluate((node, fontSize) => { node.style.fontSize = fontSize; }, size);
-        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-        for (const id of [`${prefix}-show`, prefix === 'setup' ? 'generate' : 'unlock']) assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 48);
-        if (prefix === 'setup') assert.ok((await page.locator('#generate-passphrase').boundingBox()).height >= 48);
-      }
+      await page.locator(prefix === 'setup' ? '#generate' : '#unlock').click();
+      await page.locator('#error').waitFor({ state: 'visible' });
+      await matrix(prefix);
       await page.locator(`#${prefix}-show`).click();
       assert.equal(await page.locator(`#${prefix}-show`).textContent(), 'Hide');
       assert.equal(await page.locator(`#${prefix}-show`).getAttribute('aria-controls'), `${prefix}-passphrase`);
@@ -571,6 +614,15 @@ test('setup and unlock reflow at 320px and 200% text with accessible Show/Hide',
       await page.locator(`#${prefix}-show`).click();
       assert.equal(await page.locator(`#${prefix}-passphrase`).getAttribute('type'), 'password');
     }
+    await unlockFile(page); await matrix();
+    await page.locator('#send-mode').click();
+    assert.equal(await page.locator('#message').evaluate(node => getComputedStyle(node).outlineOffset), '-2px');
+    await matrix();
+    const cover = await write(page, 'Synthetic layout message 👋', false); await matrix();
+    await page.locator('#clear').click(); await page.locator('#receive-mode').click();
+    assert.equal(await page.locator('#received').evaluate(node => getComputedStyle(node).outlineOffset), '-2px');
+    await matrix();
+    assert.equal(await read(page, cover, false), 'Synthetic layout message 👋'); await matrix();
   } finally { await browser.close(); }
 });
 
@@ -613,13 +665,14 @@ for (const channel of channels) test(`${channel}: monochrome brand and live syst
   const luminance = (value) => rgb(value).map((v) => v / 255).map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
   const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
   const checkTheme = async (page, theme) => {
+    await page.waitForFunction((theme) => getComputedStyle(document.documentElement).backgroundColor === (theme === 'dark' ? 'rgb(16, 16, 16)' : 'rgb(244, 244, 244)'), theme);
     const colors = await page.evaluate(() => {
       const styles = (selector) => getComputedStyle(document.querySelector(selector));
       return {
         page: styles('html').backgroundColor, surface: styles('main').backgroundColor,
         ink: styles('h1').color, muted: styles('.hint').color,
         primary: styles('#generate').backgroundColor, primaryInk: styles('#generate').color,
-        fieldLine: styles('#setup-passphrase').borderColor, field: styles('#setup-passphrase').backgroundColor,
+        fieldLine: styles('#setup-form .password-field').borderColor, field: styles('#setup-form .password-field').backgroundColor,
         error: styles('#error').color, errorSurface: styles('#error').backgroundColor,
         focus: styles('html').getPropertyValue('--focus').trim(),
       };
@@ -642,12 +695,13 @@ for (const channel of channels) test(`${channel}: monochrome brand and live syst
       assert.equal(await page.title(), 'BodoPechPech · بدو پچ پچ');
       await checkTheme(page, theme);
       await page.locator('#setup-passphrase').focus();
-      assert.equal(await page.locator('#setup-passphrase').evaluate((node) => getComputedStyle(node).outlineStyle), 'solid');
+      assert.equal(await page.locator('#setup-passphrase').evaluate((node) => getComputedStyle(node).outlineStyle), 'none');
+      assert.equal(await page.locator('#setup-form .password-field').evaluate((node) => getComputedStyle(node).outlineWidth), '2px');
       await page.locator('#generate').click(); await page.locator('#error').waitFor({ state: 'visible' });
       assert.equal(await page.locator('#error').getAttribute('role'), 'alert');
       assert.equal(await page.locator('#error').evaluate((node) => getComputedStyle(node).borderInlineStartWidth), '4px');
       const file = await createFile(page);
-      assert.ok(file.html.includes('prefers-color-scheme:dark'));
+      assert.ok(file.html.includes('prefers-color-scheme: dark'));
       await page.goto(file.url); await page.locator('#unlock-panel').waitFor({ state: 'visible' });
       await checkTheme(page, theme); await unlockFile(page);
       await assertEmbeddedTypeface(page, 'h1');
@@ -667,5 +721,69 @@ for (const channel of channels) test(`${channel}: monochrome brand and live syst
       assert.equal(await read(page, cover), 'ظاهر تازه، همان پیام 👋');
       clean(); await context.close();
     }
+  } finally { await browser.close(); }
+});
+
+for (const channel of channels) test(`${channel}: manual theme works offline on every screen, ignores later OS changes, and needs no storage`, { timeout: 45_000 }, async () => {
+  const browser = await chromium.launch({ channel, headless: true });
+  try {
+    const context = await browser.newContext({ offline: true, colorScheme: 'light' });
+    await context.addInitScript(() => {
+      globalThis.storageAttempts = 0;
+      for (const name of ['localStorage', 'sessionStorage', 'indexedDB']) Object.defineProperty(window, name, {
+        configurable: true, get() { globalThis.storageAttempts++; throw new window.DOMException('Denied', 'SecurityError'); },
+      });
+    });
+    const page = await context.newPage(); const clean = observe(page);
+    const theme = async (value) => {
+      await page.waitForFunction((value) => document.documentElement.dataset.theme === value, value);
+      assert.equal(await page.locator('html').evaluate(node => getComputedStyle(node).colorScheme), value);
+    };
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    await theme('light');
+    await page.emulateMedia({ colorScheme: 'dark' }); await theme('dark');
+    assert.equal(await page.locator('#theme').getAttribute('aria-label'), 'تغییر به حالت روشن');
+    await page.locator('#theme').focus(); await page.keyboard.press('Space'); await theme('light');
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.emulateMedia({ colorScheme: 'dark' }); await theme('light');
+    await page.locator('#language').click();
+    assert.equal(await page.locator('#theme').getAttribute('aria-label'), 'Switch to dark mode');
+    await page.locator('#theme').press('Enter'); await theme('dark');
+    assert.equal(await page.locator('#theme-label').textContent(), 'Light mode');
+    await page.emulateMedia({ colorScheme: 'light' }); await theme('dark');
+    await page.locator('#setup-passphrase').fill(passphrase);
+    const file = await saveDownload(page, () => page.locator('#generate').click());
+    assert.equal(/<html[^>]*data-theme/i.test(file.html), false, 'Live theme choice must not enter the immutable export');
+    assert.ok(!file.html.includes(passphrase));
+    await page.goto(file.url); await page.locator('#unlock-panel').waitFor({ state: 'visible' });
+    await theme('light');
+    await page.locator('#theme').click(); await theme('dark');
+    await unlockFile(page);
+    const switchOnScreen = async () => {
+      assert.equal(await page.locator('#theme').isVisible(), true);
+      await page.locator('#theme').click(); await theme('light');
+      await page.locator('#theme').click(); await theme('dark');
+    };
+    await switchOnScreen();
+    await page.locator('#send-mode').click();
+    await page.locator('#message').fill('Synthetic theme draft 👋');
+    await switchOnScreen();
+    assert.equal(await page.locator('#message').inputValue(), 'Synthetic theme draft 👋');
+    const cover = await write(page, 'Synthetic theme draft 👋', false);
+    await switchOnScreen();
+    assert.equal(await page.locator('#cover').inputValue(), cover);
+    await page.locator('#clear').click(); await page.locator('#receive-mode').click();
+    await page.locator('#received').fill(cover); await switchOnScreen();
+    assert.equal(await read(page, cover, false), 'Synthetic theme draft 👋');
+    await switchOnScreen();
+    assert.equal(await page.locator('#plaintext').textContent(), 'Synthetic theme draft 👋');
+    await page.locator('#reply').click(); await switchOnScreen();
+    assert.equal(await page.evaluate(() => globalThis.storageAttempts), 0);
+    await page.reload(); await page.locator('#unlock-panel').waitFor({ state: 'visible' });
+    await theme('light');
+    assert.equal(await page.locator('#conversation').isHidden(), true);
+    assert.equal(await page.locator('#unlock-passphrase').inputValue(), '');
+    assert.deepEqual(await context.cookies(), []);
+    clean();
   } finally { await browser.close(); }
 });

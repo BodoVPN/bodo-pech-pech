@@ -1,5 +1,7 @@
 # BodoPechPech v0.4.2 verification — 2026-10-10
 
+This is the v0.4.2 snapshot. See [current theme and form verification](THEME-VERIFICATION.md) for the manual theme button and corrected controls in v0.4.3. Earlier release files remain unchanged.
+
 The patch fixes generated names to `bodo-pech-pech-private-xxxxxxxx.html` and adds **Open saved conversation** to the public starter. It reads a protected attachment's metadata as bounded text and unlocks the original key. It neither executes nor rewrites the selected attachment. The passphrase policy, PBKDF2 cost, AES-GCM, BPK1 envelope, BPP1 domain-separation string, and v1/v2 message formats are unchanged.
 
 The generic HTML is **428,130 bytes (418.1 KiB)**, SHA-256 `48bf65ba8cdb4e3f6580cfdac34914b5f833fb1c48df9479825dca23b22d2ba1`. No runtime network dependency or hosted delivery was added.

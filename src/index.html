@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="__CSP__">
+  <meta name="referrer" content="no-referrer">
+  <title>Bodo Pech Pech</title>
+  <style>__STYLE__</style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="wordmark" lang="fa" dir="rtl">پچ‌پچ</span><div><h1>Bodo Pech Pech</h1><p>A private message. A Persian conversation.</p></div></div>
+      <span class="file-badge">One file. Entirely local.</span>
+    </header>
+    <div class="notice"><strong>Experimental prototype</strong><span>Template-based cover text can sound repetitive and can be detected. This is not an audited secure messenger.</span></div>
+    <p id="capability" role="status">Checking this browser’s encryption support…</p>
+    <noscript><p class="error">JavaScript is required. Open this saved HTML in a browser that allows JavaScript and Web Crypto for local files.</p></noscript>
+    <main>
+      <aside aria-label="Pair setup">
+        <div class="pair-heading"><h2>Your pair</h2><span id="pair-state">Not connected</span></div>
+        <p>Two people, one shared secret. Set it up before exchanging messages.</p>
+        <details id="setup-panel" open>
+          <summary>Set up a pair</summary>
+          <div id="setup-controls">
+            <p class="step"><strong>1.</strong> One person creates a code.</p>
+            <button id="generate" type="button" disabled>Create a new pair code</button>
+            <div id="generated-panel" hidden>
+              <label for="setup-code">Secret setup code</label>
+              <textarea id="setup-code" rows="4" readonly spellcheck="false" autocomplete="off" aria-describedby="secret-warning"></textarea>
+              <p id="secret-warning" class="warning">Anyone with this code can read and forge this pair’s messages. Share it in person or through a trusted confidential channel, never alongside the cover text.</p>
+              <button id="copy-code" type="button" class="secondary">Copy setup code</button>
+            </div>
+            <form id="import-form" autocomplete="off">
+              <label for="import-code">Or paste your partner’s setup code</label>
+              <input id="import-code" type="password" placeholder="BPP1-…" maxlength="256" autocomplete="off" spellcheck="false" autocapitalize="off">
+              <button id="import" type="submit" class="secondary" disabled>Use this code</button>
+            </form>
+          </div>
+          <div id="verify-panel" hidden>
+            <p class="step"><strong>2.</strong> Compare all six groups with your partner in person or over an authenticated channel.</p>
+            <label>Pair fingerprint</label>
+            <output id="fingerprint" class="fingerprint"></output>
+            <label class="check"><input id="verified" type="checkbox"><span>We compared the fingerprint and exchanged the code privately.</span></label>
+            <button id="confirm" type="button" disabled>Start exchanging messages</button>
+            <p class="small">The setup code disappears when you continue. If needed later, keep it in your password manager. This page does not save it.</p>
+          </div>
+        </details>
+        <div id="active-pair" hidden><p>Verified fingerprint</p><output id="active-fingerprint" class="fingerprint"></output><p class="small">Your pair key stays in this tab’s memory until you clear it or leave the page.</p></div>
+        <button id="clear" class="quiet" type="button">Clear key and messages</button>
+        <p class="small">Refresh or close this file to end the session. Clipboard contents are separate and may sync to other devices.</p>
+      </aside>
+      <section class="workspace" aria-label="Messages">
+        <div class="mode-switch" role="group" aria-label="Message direction">
+          <button id="send-mode" type="button" aria-pressed="true">Write a message</button>
+          <button id="receive-mode" type="button" aria-pressed="false">Open a message</button>
+        </div>
+        <p id="message-gate">Complete pair setup to encrypt or open a message.</p>
+        <div id="send-panel">
+          <form id="send-form" autocomplete="off">
+            <label for="message">Your private message</label>
+            <textarea id="message" rows="5" dir="auto" spellcheck="false" autocomplete="off" placeholder="Write exactly what you want your partner to read…" maxlength="4096" aria-describedby="byte-count"></textarea>
+            <div class="field-meta"><span>Only encrypted text goes into the cover.</span><span id="byte-count">0 / 2,048 bytes</span></div>
+            <details class="context-details" id="context-details">
+              <summary>Continue the visible conversation</summary>
+              <label for="context">Recent visible Persian conversation (optional)</label>
+              <textarea id="context" lang="fa" dir="rtl" rows="3" maxlength="180000" spellcheck="false" autocomplete="off" placeholder="متن گفت‌وگوی قبلی…"></textarea>
+              <p class="small">A local keyword match chooses a topic. It does not understand the conversation or use a language model.</p>
+            </details>
+            <div class="compose-actions"><div><label for="topic">Cover topic</label><select id="topic"><option value="auto">Follow context</option><option value="0">Everyday life</option><option value="1">Food and tea</option><option value="2">Getting outside</option></select></div><button id="encrypt" type="submit" disabled>Make Persian cover text</button></div>
+          </form>
+          <section id="cover-result" class="result" hidden aria-labelledby="cover-heading">
+            <div class="result-heading"><h2 id="cover-heading">Ready for your messenger</h2><button id="copy-cover" class="secondary" type="button">Copy cover text</button></div>
+            <p id="cover-stats" class="small"></p>
+            <textarea id="cover" lang="fa" dir="rtl" readonly rows="8" aria-label="Persian cover text" spellcheck="false" autocomplete="off"></textarea>
+            <p class="small">Send the entire text as one message. Do not rephrase, translate, or shorten it. Messenger size limits may require a shorter private message.</p>
+          </section>
+        </div>
+        <div id="receive-panel" hidden>
+          <form id="receive-form" autocomplete="off">
+            <label for="received">Persian cover text from your partner</label>
+            <textarea id="received" rows="10" lang="fa" dir="rtl" maxlength="180000" spellcheck="false" autocomplete="off" placeholder="متن کامل را اینجا بچسبانید…"></textarea>
+            <p class="small">Paste only the cover text, without sender names or timestamps. Common spacing, punctuation, and Persian/Arabic ی and ک differences are handled.</p>
+            <button id="decrypt" type="submit" disabled>Open private message</button>
+          </form>
+          <section id="plain-result" class="result" hidden aria-labelledby="plain-heading">
+            <div class="result-heading"><h2 id="plain-heading">Authenticated message</h2><button id="reply" type="button" class="secondary">Write a reply</button></div>
+            <p class="small">The shared key authenticated this message. Either holder of the key could have written it; it could also be a replay.</p>
+            <pre id="plaintext" dir="auto" tabindex="0"></pre>
+            <button id="copy-plain" type="button" class="quiet">Copy private message</button>
+          </section>
+        </div>
+        <p id="feedback" role="status" aria-live="polite"></p>
+        <p id="error" class="error" role="alert" hidden></p>
+      </section>
+    </main>
+    <footer>
+      <details><summary>What this file does and does not protect</summary><div class="limits">
+        <p>This file uses your browser’s AES-256-GCM encryption with a fresh random nonce per message. The Persian phrases are a reversible encoding, not encryption by themselves. The format exposes approximate message size and the selected cover topic.</p>
+        <p>There is no forward secrecy, replay protection, sender identity proof, or protection against a compromised device, browser extension, keyboard, clipboard service, or altered copy of this HTML file. A leaked pair code exposes past and future messages made with it. Use a separate new code for each pair.</p>
+        <p>The file makes no network requests, installs nothing, and does not save keys, messages, or context to browser storage. Browser and operating-system memory, session recovery, input history, and the clipboard are outside that guarantee. Clearing drops references; secure memory erasure is not guaranteed.</p>
+        <p>Keep a trusted copy of this HTML file. Open it directly in a full browser; file previewers may not run JavaScript. Desktop Chrome and Edge are the initial verification targets. Mobile file handling and Safari/Firefox need separate testing.</p>
+      </div></details>
+      <span>Prototype v0.1 · Format v1</span>
+    </footer>
+  </div>
+  <script>__SCRIPT__</script>
+</body>
+</html>

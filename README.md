@@ -18,25 +18,28 @@
 <p align="center">
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/home-fa-dark.png"><img src="docs/assets/home-fa-light.png" width="800" alt="BodoPechPech in Persian after unlocking: the full بدو پچ پچ wordmark, paired-conversation icon, and Write a message and Read a message buttons."></picture>
 </p>
-<p align="center"><sub>BodoPechPech v0.4.1, offline in Windows Chrome. Light and dark follow your system. No message content is shown.</sub></p>
+<p align="center"><sub>BodoPechPech v0.4.2, offline in Windows Chrome. Light and dark follow your system. No message content is shown.</sub></p>
 
-**[v0.4.1](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.4.1)** includes the monochrome branding shown here. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
+**[v0.4.2](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.4.2)** fixes private filenames and adds **Open saved conversation** for attachments Windows will not launch. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
 
 ## Quick start
 
-1. **Download and open** the HTML in Chrome or Edge.
+1. **Download and open** the HTML in Windows Chrome or Edge. iPhone/iPad attachment previews are not supported; Android still needs real-device testing.
 2. **One person creates the conversation.** Choose a password or **Generate**, then **Make & save conversation file**.
 3. **Share that same saved file privately.** Give the other person a copy and tell them the password separately. Both people need copies of **the same file**, not two independently created conversations.
 4. **Open, unlock, and talk.** **Write a message** prepares Persian text to copy into your messenger. **Read a message** opens the received text you paste in. Copy all of it without changing the words.
 
+**Windows says the private file cannot be opened?** Open the public starter HTML in Chrome or Edge, choose **Open saved conversation**, select your existing private HTML, and enter its original password. The app reads it locally as data; it does not run that attachment's scripts, upload it, change its key, or change Windows security settings. After reloading the starter, select the file again. [Opening help and platform limits →](docs/OPENING-FILES.md)
+
 <div dir="rtl">
 <h2>شروع سریع</h2>
 <ol>
-  <li>فایل را <strong>دانلود کنید و در Chrome یا Edge باز کنید</strong>.</li>
+  <li>فایل را <strong>دانلود کنید و در Chrome یا Edge ویندوز باز کنید</strong>. پیش‌نمایش پیوست iPhone و iPad پشتیبانی نمی‌شود؛ اندروید هنوز به آزمایش واقعی نیاز دارد.</li>
   <li><strong>یک نفر گفت‌وگو را بسازد:</strong> رمز انتخاب کند یا «ساخت خودکار» را بزند، سپس «ساخت و ذخیرهٔ فایل گفت‌وگو» را بزند.</li>
   <li><strong>همان فایل ذخیره‌شده را خصوصی به نفر دوم بدهید</strong> و رمز را جداگانه برسانید. هر دو باید نسخه‌ای از <strong>همان فایل</strong> داشته باشید، نه دو گفت‌وگوی جدا.</li>
   <li>فایل خصوصی را باز کنید و رمز را وارد کنید. <strong>نوشتن پیام</strong> متن فارسی برای کپی در پیام‌رسان می‌سازد؛ در <strong>خواندن پیام</strong> متن دریافتی را بچسبانید. همهٔ متن را بدون تغییر کلمات کپی کنید.</li>
 </ol>
+<p>اگر ویندوز فایل خصوصی را باز نمی‌کند، فایل اولیه را در Chrome یا Edge باز کنید، <strong>باز کردن گفت‌وگوی ذخیره‌شده</strong> را بزنید، فایل خصوصی قبلی را انتخاب کنید و رمز همان فایل را وارد کنید. فایل فقط روی همین دستگاه خوانده می‌شود؛ کلید، فایل و تنظیمات امنیتی تغییر نمی‌کنند. پس از بارگذاری دوبارهٔ فایل اولیه، فایل خصوصی را دوباره انتخاب کنید.</p>
 <p>رمز را نگه دارید؛ فراموشی آن ممکن است دسترسی را از بین ببرد. برای گفت‌وگوی قبلی، «محافظت از گفت‌وگوی قبلی» را بزنید؛ نسخه‌های قدیمیِ بدون محافظت با این کار امن یا باطل نمی‌شوند.</p>
 </div>
 
@@ -191,7 +194,9 @@ The connection to Persian phrase encoding is the **choice of carrier**: language
 
 ## Keep an existing conversation
 
-In the starter, choose a password, open **Protect an older conversation**, and select the old private HTML file **or** paste its BPP1 setup code. Save the protected copy. It keeps the original key and reads existing v1/v2 messages; old HTML is read as data, never executed.
+For a **password-protected file**, choose **Open saved conversation** in the starter, select the file, and enter its existing password. The saved file and original conversation key stay unchanged.
+
+For an **older unprotected file**, choose a password in the starter, open **Protect an older conversation**, and select the old private HTML file **or** paste its BPP1 setup code. Save the protected copy. It keeps the original key and reads existing v1/v2 messages; old HTML is read as data, never executed.
 
 Existing protected files still accept their original passwords, even if they do not meet today's creation rules. **Migration does not secure or revoke old unprotected copies.** [Migration details →](docs/KEY-STORAGE.md#runtime-and-migration)
 
@@ -199,10 +204,11 @@ Existing protected files still accept their original passwords, even if they do 
 
 | Platform | Status |
 | --- | --- |
-| **Windows Chrome & Edge** | Actual saved-file, offline exchange and reply flows tested. |
+| **Windows Chrome & Edge** | Offline saved-file exchange/reply and local import of a restricted-zone attachment tested. Explorer may still block launching a private attachment directly. |
 | **Android / Galaxy A51-class phones** | Target platform; **not verified on a real device**. |
+| **iPhone / iPad, including Telegram attachments** | **Unsupported attachment-opening route; no working iOS path verified.** A preview is not an interactive browser. |
 
-The current single file is about **411 KiB**, with its font, CSS and script embedded. Open it in a full browser, not a file previewer. See [current verification](docs/BRANDING-VERIFICATION.md), [v0.4.0 release verification](docs/VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
+The current single file is about **419 KiB**, with its font, CSS and script embedded. See [opening help and iOS findings](docs/OPENING-FILES.md), [current verification](docs/OPENING-VERIFICATION.md), [earlier branding verification](docs/BRANDING-VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
 
 ## Build and check
 
@@ -218,7 +224,7 @@ npm run check
 | Explore | Read more |
 | --- | --- |
 | Formats | [Message v2](docs/FORMAT-V2.md) · [Legacy v1](docs/FORMAT.md) · [Protected key storage](docs/KEY-STORAGE.md) |
-| Evidence | [Current verification](docs/BRANDING-VERIFICATION.md) · [v0.4.0 verification](docs/VERIFICATION.md) · [Historical codec comparison](docs/VERIFICATION-V2.md) |
+| Evidence | [Current verification](docs/OPENING-VERIFICATION.md) · [Opening help](docs/OPENING-FILES.md) · [Earlier branding verification](docs/BRANDING-VERIFICATION.md) · [Historical codec comparison](docs/VERIFICATION-V2.md) |
 | Visuals | [Screenshot provenance](docs/assets/README.md) · [Font attribution](assets/fonts/vazirmatn/README.md) |
 
 Typography uses **Vazirmatn v33.003**, embedded with its SIL Open Font License 1.1 and attribution. No project software license has been selected. No AI is shipped; the [earlier model investigation](docs/MODEL-NOTE.md) is historical only.

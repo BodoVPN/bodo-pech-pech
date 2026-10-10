@@ -2,11 +2,28 @@ import assert from 'node:assert/strict';
 import { createCipheriv, createDecipheriv, pbkdf2Sync, randomBytes } from 'node:crypto';
 import test from 'node:test';
 import { bytesToText, createPair, decryptBytes, encryptBytes, textToBytes } from '../src/crypto.ts';
-import { createProtectedConversation, generatePassphrase, KDF_ITERATIONS, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectKey, unlockConversation, validateNewPassphrase } from '../src/key-storage.ts';
+import { createProtectedConversation, generatePassphrase, KDF_ITERATIONS, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectedEnvelopeFromHtml, protectKey, unlockConversation, validateNewPassphrase } from '../src/key-storage.ts';
 import { personalFile } from '../src/personal-file.ts';
 
 const password = 'café river garden moon apple 7!';
 const encode = (bytes: Uint8Array): string => `BPK1-${Buffer.from(bytes).toString('hex').toUpperCase()}`;
+
+test('saved-file reader accepts only bounded protected metadata and preserves the existing conversation', async () => {
+  const envelope = await createProtectedConversation(password);
+  const html = `<html><head><!-- ignored <script> --><meta name="bpp-conversation" content="${envelope}"><style></style></head><body><script>throw 1</script><img src="https://invalid.example/test"></body></html>`;
+  assert.equal(protectedEnvelopeFromHtml(html), envelope);
+  const original = await unlockConversation(envelope, password);
+  const reopened = await unlockConversation(protectedEnvelopeFromHtml(html), password);
+  const message = 'همان گفت‌وگو 👋\r\ne\u0301\u200c';
+  assert.equal(bytesToText(await decryptBytes(reopened, await encryptBytes(original, textToBytes(message), 0))), message);
+  const damaged = parseEnvelope(envelope); damaged[4] = 2;
+  for (const invalid of [
+    html.replace(envelope, ''), html.replace(envelope, encode(damaged)),
+    html.replace('<style>', '<meta name="bpp-conversation" content="invalid"><style>'),
+    html.replace('<meta', '<!-- <meta').replace('<style>', '--><style>'),
+    '<script>' + html, '<template>' + html, 'x'.repeat(MAX_LEGACY_FILE_BYTES + 1),
+  ]) assert.throws(() => protectedEnvelopeFromHtml(invalid));
+});
 
 test('native protection interoperates with independent Node PBKDF2 and AES-GCM in both directions', async () => {
   const raw = crypto.getRandomValues(new Uint8Array(32));

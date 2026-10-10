@@ -3,4 +3,6 @@ dist/
 work/
 test-results/
 *.log
+bodo-pech-pech-private-*.html
+# Keep earlier private exports out of Git too.
 pech-pech-private-*.html

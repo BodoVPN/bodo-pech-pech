@@ -17,14 +17,22 @@
       <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 5h15a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-9l-6 5V9a4 4 0 0 1 4-4M24 11h1a4 4 0 0 1 4 4v13l-5-4h-9M10 11h9M10 15h6"/></svg><h1 data-en="BodoPechPech">بدو پچ پچ</h1></div>
       <button id="language" class="quiet" type="button" lang="en">English</button>
     </header>
-    <p id="capability" role="status" data-en="Opening…">در حال باز شدن…</p>
-    <noscript><p>این فایل را با Chrome یا Edge باز کنید. / Open this file in Chrome or Edge with JavaScript enabled.</p></noscript>
+    <p id="capability" role="status">در حال باز شدن… اگر این نوشته باقی ماند، این نمایشگر نمی‌تواند برنامه را اجرا کند. پیش‌نمایش پیوست در iPhone و iPad پشتیبانی نمی‌شود.<br><span lang="en" dir="ltr">Opening… If this stays visible, this viewer cannot run the app. iPhone and iPad attachment previews are not supported.</span></p>
+    <noscript><p>این برنامه برای کار کردن به JavaScript نیاز دارد. / This app needs JavaScript to run; an attachment preview is not enough.</p></noscript>
     <main>
       <section id="setup-panel" hidden aria-labelledby="setup-heading">
         <h2 id="setup-heading" data-en="Prepare once. Use whenever you need.">یک بار آماده کنید؛ همیشه استفاده کنید.</h2>
         <p data-en="Make one private conversation file. Keep a copy and give the same file to the other person.">یک فایل گفت‌وگوی خصوصی بسازید. یک نسخه را نگه دارید و همان فایل را به نفر دوم بدهید.</p>
         <p class="notice" data-en="Choose one passphrase to protect the file. Give the same file and passphrase to the other person privately. Keep the passphrase separate from the file when sending it.">یک عبارت رمز برای محافظت از فایل انتخاب کنید. همان فایل و عبارت رمز را خصوصی به نفر دوم بدهید. هنگام ارسال، عبارت رمز را جدا از فایل نگه دارید.</p>
         <div id="setup-controls">
+          <details id="open-saved"><summary data-en="Open saved conversation">باز کردن گفت‌وگوی ذخیره‌شده</summary>
+            <form id="open-file-form" autocomplete="off">
+              <label for="saved-file" data-en="Choose your private HTML file">فایل HTML خصوصی خود را انتخاب کنید</label>
+              <input id="saved-file" type="file" accept=".html,text/html">
+              <p class="hint" data-en="Reads your saved conversation locally, then asks for its existing passphrase. Nothing is uploaded or changed.">گفت‌وگوی ذخیره‌شده را روی همین دستگاه می‌خواند و عبارت رمز فعلی را می‌پرسد. چیزی ارسال یا تغییر داده نمی‌شود.</p>
+              <button id="open-file" type="submit" class="secondary" disabled data-en="Open conversation">باز کردن گفت‌وگو</button>
+            </form>
+          </details>
           <form id="setup-form" autocomplete="off">
             <label for="setup-passphrase" data-en="Choose a passphrase">یک عبارت رمز انتخاب کنید</label>
             <div class="password-field"><input id="setup-passphrase" type="password" dir="auto" maxlength="1024" autocomplete="off" spellcheck="false" autocapitalize="off" aria-describedby="passphrase-hint"><button id="setup-show" type="button" class="quiet" aria-controls="setup-passphrase" aria-pressed="false">نمایش</button></div>
@@ -45,9 +53,10 @@
         </div>
         <div id="download-panel" hidden>
           <h2 tabindex="-1" id="download-heading" data-en="Your private file is ready">فایل خصوصی شما آماده است</h2>
-          <p data-en="Open the saved file from Downloads and enter your passphrase. Give that same file privately to the other person, and share the passphrase separately. You can then close this starter page.">فایل ذخیره‌شده را از پوشهٔ دانلودها باز کنید و عبارت رمز را وارد کنید. همان فایل را خصوصی به نفر دوم بدهید و عبارت رمز را جداگانه برسانید. سپس می‌توانید این صفحهٔ اولیه را ببندید.</p>
+          <p data-en="Keep the saved file and enter your passphrase when opening it. Give that same file privately to the other person, and share the passphrase separately.">فایل ذخیره‌شده را نگه دارید و هنگام باز کردن آن عبارت رمز را وارد کنید. همان فایل را خصوصی به نفر دوم بدهید و عبارت رمز را جداگانه برسانید.</p>
           <a id="download" class="primary" data-en="Save the file again">ذخیرهٔ دوبارهٔ فایل</a>
           <p class="hint" data-en="If no download appeared, use this button. Do not create a different file for the other person.">اگر دانلود شروع نشد، این دکمه را بزنید. برای نفر دوم فایل تازه‌ای نسازید.</p>
+          <p class="hint" data-en="Windows blocks opening the saved file? Reopen the starter HTML in Chrome or Edge, choose Open saved conversation, and select your private file. iPhone/iPad attachment previews are not supported.">ویندوز اجازهٔ باز کردن فایل ذخیره‌شده را نمی‌دهد؟ فایل اولیه را در Chrome یا Edge باز کنید، «باز کردن گفت‌وگوی ذخیره‌شده» را بزنید و فایل خصوصی را انتخاب کنید. پیش‌نمایش پیوست در iPhone و iPad پشتیبانی نمی‌شود.</p>
         </div>
       </section>
       <section id="unlock-panel" hidden aria-labelledby="unlock-heading">
@@ -111,7 +120,7 @@
         <p data-en="The saved conversation key is encrypted with your passphrase. A long, hard-to-guess passphrase matters: someone with the file can try guesses offline. Anyone with both can read old and new messages and write as either person. There is no passphrase recovery. Older unprotected copies remain usable.">کلید گفت‌وگو در فایل با عبارت رمز شما رمزگذاری شده است. عبارت رمز طولانی و غیرقابل‌حدس مهم است: دارندهٔ فایل می‌تواند بدون اینترنت رمزهای احتمالی را امتحان کند. هر کس فایل و رمز را داشته باشد می‌تواند پیام‌های قدیم و جدید را بخواند و به جای هر دو نفر بنویسد. بازیابی رمز وجود ندارد. نسخه‌های قدیمیِ بدون محافظت همچنان قابل استفاده‌اند.</p>
         <p data-en="Experimental, not independently audited. Messages are encrypted with AES-256-GCM. Persian wording is a reversible disguise, may sound artificial, and can be detected. There is no sender identity proof, replay protection or forward secrecy. Protect your device and clipboard too.">این نسخه آزمایشی است و بررسی امنیتی مستقل نشده است. پیام‌ها با AES-256-GCM رمز می‌شوند. متن فارسی فقط پوشش برگشت‌پذیر است؛ ممکن است مصنوعی باشد و شناسایی شود. هویت فرستنده ثابت نمی‌شود و از تکرار پیام یا افشای پیام‌های قبلی پس از لو رفتن فایل جلوگیری نمی‌شود. از دستگاه و کلیپ‌بورد خود هم مراقبت کنید.</p>
         <p data-en="No AI, network requests, browser storage or installation. Passphrases and messages are not saved in the file. Done clears messages but keeps this tab unlocked; closing or reloading locks it. Clearing cannot guarantee memory erasure. Protect your unlocked device and use a trusted HTML copy: someone who changes the file can change what it does.">هوش مصنوعی، درخواست اینترنتی، ذخیره‌سازی مرورگر یا نصب برنامه‌ای وجود ندارد. عبارت رمز و پیام‌ها در فایل ذخیره نمی‌شوند. «تمام شد» پیام‌ها را پاک می‌کند ولی زبانه باز می‌ماند؛ بستن یا بارگذاری مجدد آن را قفل می‌کند. پاک کردن، محو شدن قطعی از حافظه را تضمین نمی‌کند. از دستگاهِ بازشده و نسخهٔ معتبر فایل استفاده کنید؛ تغییر فایل می‌تواند کارِ آن را تغییر دهد.</p>
-        <p data-en="Tested as an offline saved file in Windows Chrome and Edge. Android phones, including Galaxy A51-class devices, still need real-device testing. Open in a full browser, not a file previewer.">فایل ذخیره‌شده بدون اینترنت در Chrome و Edge ویندوز آزمایش شده است. گوشی‌های اندروید، از جمله دستگاه‌های هم‌ردهٔ Galaxy A51، هنوز به آزمایش واقعی نیاز دارند. فایل را در مرورگر کامل باز کنید، نه پیش‌نمایش فایل.</p>
+        <p data-en="Tested offline in Windows Chrome and Edge. If Windows blocks a private attachment, use Open saved conversation in the starter HTML. iPhone/iPad attachment previews are not supported; no working iOS path has been verified. Android phones still need real-device testing.">بدون اینترنت در Chrome و Edge ویندوز آزمایش شده است. اگر ویندوز پیوست خصوصی را باز نمی‌کند، در فایل اولیه «باز کردن گفت‌وگوی ذخیره‌شده» را بزنید. پیش‌نمایش پیوست در iPhone و iPad پشتیبانی نمی‌شود؛ مسیر کارکردی در iOS تأیید نشده است. گوشی‌های اندروید هنوز به آزمایش واقعی نیاز دارند.</p>
       </details>
       <p class="version" data-en="BodoPechPech · Reads v1 + v2">بدو پچ پچ · خواندن نسخه‌های ۱ و ۲</p>
     </footer>

@@ -111,16 +111,27 @@ export async function unlockConversation(value: string, passphrase: string): Pro
 
 export function protectedFileId(value: string): string { return hex(parseEnvelope(value).slice(11, 15)).toLowerCase(); }
 
-export const MAX_LEGACY_FILE_BYTES = 2 * 1024 * 1024;
-export function legacyCodeFromHtml(html: string): string {
-  if (html.length > MAX_LEGACY_FILE_BYTES) throw new Error('Old file is too large');
+export const MAX_CONVERSATION_FILE_BYTES = 2 * 1024 * 1024;
+export const MAX_LEGACY_FILE_BYTES = MAX_CONVERSATION_FILE_BYTES;
+function conversationMetadata(html: string): string {
+  if (html.length > MAX_CONVERSATION_FILE_BYTES) throw new Error('Conversation file is too large');
   // Read only the known prologue format. No DOM parser, insertion, resource load
   // or script execution. The released files place metadata before these blocks.
-  let head = html.slice(0, 8192);
+  let head = html.slice(0, 8192).replace(/<!--[\s\S]*?-->/g, '');
   const boundary = head.search(/<(?:script|style|template)\b|<\/head\s*>/i);
-  if (boundary < 0) throw new Error('Not an old conversation file');
-  head = head.slice(0, boundary).replace(/<!--[\s\S]*?-->/g, '');
-  const slots = [...head.matchAll(/<meta\s+name="bpp-conversation"\s+content="(BPP1[0-9A-F]{72})"\s*>/g)];
-  if (slots.length !== 1) throw new Error('Not an old conversation file');
+  if (boundary < 0) throw new Error('Not a conversation file');
+  head = head.slice(0, boundary);
+  const slots = [...head.matchAll(/<meta\s+name="bpp-conversation"\s+content="([^"]*)"\s*>/g)];
+  if (slots.length !== 1) throw new Error('Not a conversation file');
   return slots[0][1];
+}
+export function legacyCodeFromHtml(html: string): string {
+  const code = conversationMetadata(html);
+  if (!/^BPP1[0-9A-F]{72}$/.test(code)) throw new Error('Not an old conversation file');
+  return code;
+}
+export function protectedEnvelopeFromHtml(html: string): string {
+  const envelope = conversationMetadata(html);
+  parseEnvelope(envelope);
+  return envelope;
 }

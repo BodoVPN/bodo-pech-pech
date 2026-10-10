@@ -1,5 +1,7 @@
 # BodoPechPech v0.4.1 verification — 2026-10-10
 
+Historical snapshot. A subsequent audit found that v0.4.1 still exported shortened private filenames and its browser tests asserted that wrong name. Its automated browser reopen checks did not exercise Explorer attachment launching. These gaps and the current fixes are documented in [v0.4.2 opening verification](OPENING-VERIFICATION.md).
+
 The v0.4.1 build uses the full **BodoPechPech / بدو پچ پچ** brand, a paired-conversation mark, and grayscale light/dark themes driven by the system preference. No theme control, saved preference, runtime dependency or additional setup step was introduced. Setup, one-step unlock, Write/Read/Reply and Done retain their existing behavior. Crypto, passphrase policy, formats and identifiers are unchanged.
 
 The generic HTML is **420,394 bytes (410.5 KiB)**, SHA-256 `418729b1c57250988a4ea273e7f53e846b431555730f2ce4e7b978b83eac594e`. The v0.4.1 package metadata and expanded protocol/history documentation leave it byte-identical to the branding build from PR #4. **v0.4.0 remains unchanged** at 417,243 bytes with SHA-256 `fef054f812608398cf0a23681ad0a0bd005db53d4c6d12b7d6011d07a994d4b9`.

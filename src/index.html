@@ -19,23 +19,41 @@
       <section id="setup-panel" hidden aria-labelledby="setup-heading">
         <h2 id="setup-heading" data-en="Prepare once. Use whenever you need.">یک بار آماده کنید؛ همیشه استفاده کنید.</h2>
         <p data-en="Make one private conversation file. Keep a copy and give the same file to the other person.">یک فایل گفت‌وگوی خصوصی بسازید. یک نسخه را نگه دارید و همان فایل را به نفر دوم بدهید.</p>
-        <p class="notice" data-en="Anyone with this file can read and write your conversation. Hand it over in person or another trusted private way — never through a monitored messenger.">هر کسی این فایل را داشته باشد، می‌تواند پیام‌های شما را بخواند و بنویسد. آن را حضوری یا از راهی امن و خصوصی بدهید؛ هرگز در پیام‌رسانِ زیر نظر نفرستید.</p>
+        <p class="notice" data-en="Choose one passphrase to protect the file. Give the same file and passphrase to the other person privately. Keep the passphrase separate from the file when sending it.">یک عبارت رمز برای محافظت از فایل انتخاب کنید. همان فایل و عبارت رمز را خصوصی به نفر دوم بدهید. هنگام ارسال، عبارت رمز را جدا از فایل نگه دارید.</p>
         <div id="setup-controls">
-          <button id="generate" class="primary" type="button" disabled data-en="Make & save conversation file">ساخت و ذخیرهٔ فایل گفت‌وگو</button>
-          <details id="legacy-setup"><summary data-en="Already have an old setup code?">کدِ گفت‌وگوی قبلی را دارید؟</summary>
+          <form id="setup-form" autocomplete="off">
+            <label for="setup-passphrase" data-en="Choose a passphrase">یک عبارت رمز انتخاب کنید</label>
+            <div class="password-field"><input id="setup-passphrase" type="password" dir="auto" maxlength="1024" autocomplete="off" spellcheck="false" autocapitalize="off" aria-describedby="passphrase-hint"><button id="setup-show" type="button" class="quiet" aria-controls="setup-passphrase" aria-pressed="false">نمایش</button></div>
+            <button id="generate-passphrase" class="quiet" type="button" disabled data-en="Generate">ساخت خودکار</button>
+            <p id="passphrase-hint" class="hint" data-en="At least 8 characters, one number and one symbol (like !). Or choose Generate. Keep it safe: there is no reset.">دست‌کم ۸ نویسه، یک عدد و یک نماد (مثل !). یا «ساخت خودکار» را بزنید. امن نگه دارید: بازنشانی ندارد.</p>
+            <button id="generate" class="primary" type="submit" disabled data-en="Make & save conversation file">ساخت و ذخیرهٔ فایل گفت‌وگو</button>
+          </form>
+          <details id="legacy-setup"><summary data-en="Protect an older conversation">محافظت از گفت‌وگوی قبلی</summary>
             <form id="import-form" autocomplete="off">
-              <label for="import-code" data-en="Paste the old code">کد قبلی را بچسبانید</label>
+              <label for="import-file" data-en="Choose the old private HTML file">فایل HTML خصوصی قبلی را انتخاب کنید</label>
+              <input id="import-file" type="file" accept=".html,text/html">
+              <label for="import-code" data-en="Or paste the old setup code">یا کد قبلی را بچسبانید</label>
               <input id="import-code" type="password" dir="ltr" maxlength="256" autocomplete="off" spellcheck="false" autocapitalize="off">
-              <button id="import" type="submit" class="primary" disabled data-en="Save this conversation as a file">ذخیرهٔ همین گفت‌وگو در یک فایل</button>
+              <p class="hint" data-en="Use the passphrase above. This keeps your existing conversation. Old unprotected copies still work and must be kept safe or deleted; this cannot revoke them.">از عبارت رمز بالا استفاده می‌شود. گفت‌وگوی فعلی حفظ می‌شود. نسخه‌های قبلیِ بدون محافظت هنوز کار می‌کنند؛ آن‌ها را امن نگه دارید یا حذف کنید. این کار آن‌ها را باطل نمی‌کند.</p>
+              <button id="import" type="submit" class="primary" disabled data-en="Save a protected copy">ذخیرهٔ نسخهٔ محافظت‌شده</button>
             </form>
           </details>
         </div>
         <div id="download-panel" hidden>
           <h2 tabindex="-1" id="download-heading" data-en="Your private file is ready">فایل خصوصی شما آماده است</h2>
-          <p data-en="Open the saved file from Downloads. Give that same file privately to the other person. You can then close this starter page.">فایل ذخیره‌شده را از پوشهٔ دانلودها باز کنید. همان فایل را خصوصی به نفر دوم بدهید. سپس می‌توانید این صفحهٔ اولیه را ببندید.</p>
+          <p data-en="Open the saved file from Downloads and enter your passphrase. Give that same file privately to the other person, and share the passphrase separately. You can then close this starter page.">فایل ذخیره‌شده را از پوشهٔ دانلودها باز کنید و عبارت رمز را وارد کنید. همان فایل را خصوصی به نفر دوم بدهید و عبارت رمز را جداگانه برسانید. سپس می‌توانید این صفحهٔ اولیه را ببندید.</p>
           <a id="download" class="primary" data-en="Save the file again">ذخیرهٔ دوبارهٔ فایل</a>
           <p class="hint" data-en="If no download appeared, use this button. Do not create a different file for the other person.">اگر دانلود شروع نشد، این دکمه را بزنید. برای نفر دوم فایل تازه‌ای نسازید.</p>
         </div>
+      </section>
+      <section id="unlock-panel" hidden aria-labelledby="unlock-heading">
+        <h2 id="unlock-heading" data-en="Open your conversation">گفت‌وگوی خود را باز کنید</h2>
+        <form id="unlock-form" autocomplete="off">
+          <label for="unlock-passphrase" data-en="Passphrase">عبارت رمز</label>
+          <div class="password-field"><input id="unlock-passphrase" type="password" dir="auto" maxlength="1024" autocomplete="off" spellcheck="false" autocapitalize="off" aria-describedby="unlock-hint"><button id="unlock-show" type="button" class="quiet" aria-controls="unlock-passphrase" aria-pressed="false">نمایش</button></div>
+          <p id="unlock-hint" class="hint" data-en="Unlock once while this tab stays open. You can switch to your messenger and come back.">تا وقتی این زبانه باز است، یک بار کافی است. می‌توانید به پیام‌رسان بروید و برگردید.</p>
+          <button id="unlock" type="submit" class="primary" disabled data-en="Unlock">باز کردن</button>
+        </form>
       </section>
       <section id="conversation" hidden aria-label="گفت‌وگو">
         <div id="home">
@@ -86,12 +104,12 @@
     </main>
     <footer>
       <details><summary data-en="About this private file">دربارهٔ این فایل خصوصی</summary>
-        <p data-en="This private file contains the conversation’s secret. Anyone with a copy can read old and new messages and write messages as either person. Closing the page or clearing messages does not remove the secret from the file. Keep it off shared or synced folders. If it is lost or copied, make a new conversation file and hand it over privately.">راز این گفت‌وگو در خودِ فایل خصوصی است. هر کسی نسخه‌ای از آن را داشته باشد، می‌تواند پیام‌های قدیم و جدید را بخواند و به جای هر دو نفر پیام بنویسد. بستن صفحه یا پاک کردن پیام‌ها، راز را از فایل پاک نمی‌کند. فایل را در پوشهٔ مشترک یا همگام‌شونده نگذارید. اگر گم یا کپی شد، فایل گفت‌وگوی تازه‌ای بسازید و خصوصی تحویل بدهید.</p>
+        <p data-en="The saved conversation key is encrypted with your passphrase. A long, hard-to-guess passphrase matters: someone with the file can try guesses offline. Anyone with both can read old and new messages and write as either person. There is no passphrase recovery. Older unprotected copies remain usable.">کلید گفت‌وگو در فایل با عبارت رمز شما رمزگذاری شده است. عبارت رمز طولانی و غیرقابل‌حدس مهم است: دارندهٔ فایل می‌تواند بدون اینترنت رمزهای احتمالی را امتحان کند. هر کس فایل و رمز را داشته باشد می‌تواند پیام‌های قدیم و جدید را بخواند و به جای هر دو نفر بنویسد. بازیابی رمز وجود ندارد. نسخه‌های قدیمیِ بدون محافظت همچنان قابل استفاده‌اند.</p>
         <p data-en="Experimental, not independently audited. Messages are encrypted with AES-256-GCM. Persian wording is a reversible disguise, may sound artificial, and can be detected. There is no sender identity proof, replay protection or forward secrecy. Protect your device and clipboard too.">این نسخه آزمایشی است و بررسی امنیتی مستقل نشده است. پیام‌ها با AES-256-GCM رمز می‌شوند. متن فارسی فقط پوشش برگشت‌پذیر است؛ ممکن است مصنوعی باشد و شناسایی شود. هویت فرستنده ثابت نمی‌شود و از تکرار پیام یا افشای پیام‌های قبلی پس از لو رفتن فایل جلوگیری نمی‌شود. از دستگاه و کلیپ‌بورد خود هم مراقبت کنید.</p>
-        <p data-en="No AI, network requests, browser storage or installation. Only the file you deliberately save contains the secret; messages are not added to it. Clearing cannot guarantee memory erasure. Use a trusted HTML copy: someone who changes the file can change what it does.">هوش مصنوعی، درخواست اینترنتی، ذخیره‌سازی مرورگر یا نصب برنامه‌ای وجود ندارد. فقط فایلی که خودتان ذخیره می‌کنید حاوی راز است؛ پیام‌ها به آن اضافه نمی‌شوند. پاک کردن، محو شدن قطعی از حافظه را تضمین نمی‌کند. از نسخهٔ معتبر استفاده کنید؛ هر کس فایل را تغییر دهد می‌تواند کارِ آن را هم تغییر دهد.</p>
+        <p data-en="No AI, network requests, browser storage or installation. Passphrases and messages are not saved in the file. Done clears messages but keeps this tab unlocked; closing or reloading locks it. Clearing cannot guarantee memory erasure. Protect your unlocked device and use a trusted HTML copy: someone who changes the file can change what it does.">هوش مصنوعی، درخواست اینترنتی، ذخیره‌سازی مرورگر یا نصب برنامه‌ای وجود ندارد. عبارت رمز و پیام‌ها در فایل ذخیره نمی‌شوند. «تمام شد» پیام‌ها را پاک می‌کند ولی زبانه باز می‌ماند؛ بستن یا بارگذاری مجدد آن را قفل می‌کند. پاک کردن، محو شدن قطعی از حافظه را تضمین نمی‌کند. از دستگاهِ بازشده و نسخهٔ معتبر فایل استفاده کنید؛ تغییر فایل می‌تواند کارِ آن را تغییر دهد.</p>
         <p data-en="Tested as an offline saved file in Windows Chrome and Edge. Android phones, including Galaxy A51-class devices, still need real-device testing. Open in a full browser, not a file previewer.">فایل ذخیره‌شده بدون اینترنت در Chrome و Edge ویندوز آزمایش شده است. گوشی‌های اندروید، از جمله دستگاه‌های هم‌ردهٔ Galaxy A51، هنوز به آزمایش واقعی نیاز دارند. فایل را در مرورگر کامل باز کنید، نه پیش‌نمایش فایل.</p>
       </details>
-      <p class="version" data-en="Pech Pech 0.3 · Reads v1 + v2">پچ‌پچ ۰٫۳ · خواندن نسخه‌های ۱ و ۲</p>
+      <p class="version" data-en="Pech Pech 0.4 · Reads v1 + v2">پچ‌پچ ۰٫۴ · خواندن نسخه‌های ۱ و ۲</p>
     </footer>
   </div>
   <script>__SCRIPT__</script>

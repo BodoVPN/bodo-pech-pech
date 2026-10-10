@@ -12,6 +12,7 @@ const scratch = await mkdtemp(resolve(scratchRoot, 'visual-private-'));
 if (dirname(scratch) !== scratchRoot) throw new Error('Scratch path is outside the owned root');
 const genericUrl = pathToFileURL(resolve('bodo-pech-pech.html')).href;
 const records = [];
+const passphrase = 'Disposable visual review words only 7!';
 
 try {
   for (const channel of ['chrome', 'msedge']) {
@@ -34,6 +35,8 @@ try {
         await page.goto(genericUrl);
         await page.locator('#setup-panel').waitFor({ state: 'visible' });
         await shot('setup');
+        await page.locator('#language').click(); await shot('setup-english'); await page.locator('#language').click();
+        await page.locator('#setup-passphrase').fill(passphrase);
         const pending = page.waitForEvent('download');
         await page.locator('#generate').click();
         const download = await pending;
@@ -41,6 +44,11 @@ try {
         await download.saveAs(file);
         await shot('download');
         await page.goto(pathToFileURL(file).href);
+        await page.locator('#unlock-panel').waitFor({ state: 'visible' });
+        await shot('unlock');
+        await page.locator('#language').click(); await shot('unlock-english'); await page.locator('#language').click();
+        await page.locator('#unlock-passphrase').fill(passphrase);
+        await page.locator('#unlock').click();
         await page.locator('#conversation').waitFor({ state: 'visible' });
         await shot('home');
         await page.locator('#send-mode').click();

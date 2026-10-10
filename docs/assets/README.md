@@ -1,6 +1,6 @@
 # README screenshots
 
-These are unedited page screenshots of the **current main-branch BodoPechPech branding build**, captured on 2026-10-10 in Windows Chrome 155.0.8059.39 with networking disabled. The older v0.4.0 release keeps its original appearance and binaries. There is no browser chrome, personal tab content, visible password, conversation key, clipboard content or message text in the images.
+These are unedited page screenshots of the **BodoPechPech v0.4.1 branding build**, captured on 2026-10-10 in Windows Chrome 155.0.8059.39 with networking disabled. The captured HTML is byte-identical to the v0.4.1 artifact; the package version and protocol/history documentation changed after capture. The older v0.4.0 release keeps its original appearance and binaries. There is no browser chrome, personal tab content, visible password, conversation key, clipboard content or message text in the images.
 
 | Image | Actual state | Viewport |
 | --- | --- | --- |

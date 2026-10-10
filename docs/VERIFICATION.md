@@ -1,6 +1,8 @@
 # Protected-file verification — 2026-10-10
 
-The generic 0.4 HTML is **417,243 bytes (407.5 KiB)**. SHA-256: `fef054f812608398cf0a23681ad0a0bd005db53d4c6d12b7d6011d07a994d4b9`. Each protected export adds exactly 179 ASCII bytes in the inert metadata slot. The generic tracked file has no conversation key or protected envelope. No model, runtime download, server or companion asset is required. This is the feature branch's review artifact, not a replacement for the published v0.3.0 release.
+This is the **v0.4.0 release snapshot**. For the newer main-branch brand and monochrome light/dark UI, see [current branding verification](BRANDING-VERIFICATION.md). The v0.4.0 tag and release assets have not been replaced.
+
+The released generic 0.4 HTML is **417,243 bytes (407.5 KiB)**. SHA-256: `fef054f812608398cf0a23681ad0a0bd005db53d4c6d12b7d6011d07a994d4b9`. Each protected export adds exactly 179 ASCII bytes in the inert metadata slot. The generic file has no conversation key or protected envelope. No model, runtime download, server or companion asset is required. The earlier v0.3.0 release remains available unchanged.
 
 ## Fresh checks
 

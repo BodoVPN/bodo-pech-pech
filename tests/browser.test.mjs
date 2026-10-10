@@ -540,3 +540,66 @@ test('Generate only fills the editable setup field, preserves legacy selection a
     clean();
   } finally { await browser.close(); }
 });
+
+for (const channel of channels) test(`${channel}: monochrome brand and live system themes survive export, unlock and narrow layouts`, { timeout: 45_000 }, async () => {
+  const browser = await chromium.launch({ channel, headless: true });
+  const rgb = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+  const luminance = (value) => rgb(value).map((v) => v / 255).map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
+  const checkTheme = async (page, theme) => {
+    const colors = await page.evaluate(() => {
+      const styles = (selector) => getComputedStyle(document.querySelector(selector));
+      return {
+        page: styles('html').backgroundColor, surface: styles('main').backgroundColor,
+        ink: styles('h1').color, muted: styles('.hint').color,
+        primary: styles('#generate').backgroundColor, primaryInk: styles('#generate').color,
+        fieldLine: styles('#setup-passphrase').borderColor, field: styles('#setup-passphrase').backgroundColor,
+        error: styles('#error').color, errorSurface: styles('#error').backgroundColor,
+        focus: styles('html').getPropertyValue('--focus').trim(),
+      };
+    });
+    for (const [name, value] of Object.entries(colors)) {
+      if (name === 'focus') continue;
+      const components = rgb(value); assert.ok(components.every((v) => v === components[0]), `${name} must be monochrome`);
+    }
+    assert.equal(colors.page, theme === 'dark' ? 'rgb(16, 16, 16)' : 'rgb(244, 244, 244)');
+    for (const [foreground, background] of [[colors.ink, colors.surface], [colors.muted, colors.surface], [colors.primaryInk, colors.primary], [colors.error, colors.errorSurface]]) assert.ok(contrast(foreground, background) >= 4.5);
+    assert.ok(contrast(colors.fieldLine, colors.field) >= 3);
+    return colors;
+  };
+  try {
+    for (const theme of ['light', 'dark']) {
+      const context = await browser.newContext({ offline: true, colorScheme: theme, viewport: { width: 390, height: 844 } });
+      const page = await context.newPage(); const clean = observe(page);
+      await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('h1').textContent(), 'بدو پچ پچ');
+      assert.equal(await page.title(), 'BodoPechPech · بدو پچ پچ');
+      await checkTheme(page, theme);
+      await page.locator('#setup-passphrase').focus();
+      assert.equal(await page.locator('#setup-passphrase').evaluate((node) => getComputedStyle(node).outlineStyle), 'solid');
+      await page.locator('#generate').click(); await page.locator('#error').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('#error').getAttribute('role'), 'alert');
+      assert.equal(await page.locator('#error').evaluate((node) => getComputedStyle(node).borderInlineStartWidth), '4px');
+      const file = await createFile(page);
+      assert.ok(file.html.includes('prefers-color-scheme:dark'));
+      await page.goto(file.url); await page.locator('#unlock-panel').waitFor({ state: 'visible' });
+      await checkTheme(page, theme); await unlockFile(page);
+      await assertEmbeddedTypeface(page, 'h1');
+      await page.locator('#language').click(); assert.equal(await page.locator('h1').textContent(), 'BodoPechPech');
+      for (const width of [390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        for (const fontSize of ['20px', '40px']) {
+          await page.locator('html').evaluate((node, value) => { node.style.fontSize = value; }, fontSize);
+          assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        }
+      }
+      await page.locator('html').evaluate((node) => { node.style.fontSize = ''; });
+      const cover = await write(page, 'ظاهر تازه، همان پیام 👋'); await page.locator('#clear').click();
+      const opposite = theme === 'dark' ? 'light' : 'dark'; await page.emulateMedia({ colorScheme: opposite });
+      await checkTheme(page, opposite);
+      assert.equal(await page.locator('#conversation').isVisible(), true);
+      assert.equal(await read(page, cover), 'ظاهر تازه، همان پیام 👋');
+      clean(); await context.close();
+    }
+  } finally { await browser.close(); }
+});

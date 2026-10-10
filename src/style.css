@@ -13,7 +13,7 @@
   line-height: 1.85;
   color: var(--ink);
   background: var(--page);
-  color-scheme: light dark;
+  color-scheme: light;
   font-synthesis: none;
   --ink: #202020;
   --muted: #606060;
@@ -31,8 +31,8 @@
   --selection: #d0d0d0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+:root[data-theme="dark"] {
+    color-scheme: dark;
     --ink: #f2f2f2;
     --muted: #b8b8b8;
     --page: #101010;
@@ -47,14 +47,14 @@
     --primary-ink: #141414;
     --primary-hover: #d2d2d2;
     --selection: #505050;
-  }
 }
 
 * { box-sizing: border-box; }
 body { margin: 0; }
 .shell { width: min(100%, 700px); margin: auto; padding: 40px 28px 32px; }
-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; margin-bottom: 28px; padding-inline: 6px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 28px; padding-inline: 6px; }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.header-actions { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .brand-mark { width: 34px; height: 34px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 h1 { margin: 0; color: var(--ink); font-size: 1.15rem; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
 h2, .title { display: block; margin: 0 0 22px; font-size: 1.35rem; font-weight: 600; line-height: 1.65; }
@@ -84,12 +84,17 @@ button:disabled { opacity: .5; cursor: wait; }
 .secondary:hover:not(:disabled) { background: var(--hover); }
 .quiet { padding: 10px 8px; color: var(--ink); background: transparent; font-size: .9rem; font-weight: 450; }
 .quiet:hover:not(:disabled) { color: var(--ink); background: var(--subtle); }
-#language { min-width: 82px; padding: 8px 16px; border: 1px solid var(--line); border-radius: 100px; color: var(--muted); font-size: .8rem; font-weight: 500; }
+.header-actions button { min-height: 48px; padding: 8px 12px; border: 1px solid var(--field-line); border-radius: 12px; color: var(--ink); font-size: .8rem; font-weight: 500; }
+#language { min-width: 82px; }
+#theme { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.theme-icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.theme-sun, :root[data-theme="dark"] .theme-moon { display: none; }
+:root[data-theme="dark"] .theme-sun { display: initial; }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible, pre:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 4px;
 }
-input:focus-visible, textarea:focus-visible { outline-width: 2px; outline-offset: 2px; }
+input:focus-visible, textarea:focus-visible { outline-width: 2px; outline-offset: -2px; }
 [tabindex="-1"]:focus { outline: none; }
 [tabindex="-1"]:focus-visible { outline: 3px solid var(--focus); outline-offset: 6px; border-radius: 4px; }
 
@@ -108,9 +113,14 @@ input, textarea {
   caret-color: var(--focus);
 }
 textarea { min-height: 160px; resize: vertical; }
-.password-field { display: flex; align-items: center; gap: 10px; }
-.password-field input { flex: 1; width: 0; }
-.password-field button { flex: none; }
+.password-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; min-width: 0; padding: 4px; border: 1px solid var(--field-line); border-radius: 12px; background: var(--field); }
+.password-field input { width: 100%; min-height: 56px; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; line-height: 1.6; }
+.password-field input:focus { outline: none; background: transparent; }
+.password-field:has(input:focus) { border-color: transparent; outline: 2px solid var(--focus); outline-offset: -2px; }
+.password-field .quiet { min-width: 4.5em; min-height: 56px; padding: 10px 12px; border-inline-start: 1px solid var(--line); border-radius: 8px; font-size: .85rem; }
+.password-field button:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; }
+.password-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.password-actions button { margin: 0; min-height: 48px; font-size: .85rem; }
 input[type="file"] { font-size: .8rem; padding: 12px; }
 input:hover, textarea:hover { border-color: var(--ink); }
 input:focus, textarea:focus { border-color: var(--field-line); background: var(--surface); }
@@ -149,6 +159,7 @@ footer p { line-height: 1.95; }
 @media (max-width: 520px) {
   .shell { padding: 24px 16px 28px; }
   header { margin-bottom: 22px; padding-inline: 4px; }
+  .header-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .brand { gap: 10px; }
   .brand-mark { width: 28px; height: 28px; }
   h1 { font-size: 1.05rem; }
@@ -169,6 +180,7 @@ footer p { line-height: 1.95; }
 @media (forced-colors: active) {
   button, a.primary, .notice, pre { border: 2px solid ButtonText; }
   .symbol, .quiet { color: ButtonText; }
+  .password-field:has(input:focus) { outline-color: Highlight; }
 }
 
 ::selection { background: var(--selection); color: var(--ink); }

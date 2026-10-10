@@ -15,7 +15,10 @@
   <div class="shell">
     <header>
       <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 5h15a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-9l-6 5V9a4 4 0 0 1 4-4M24 11h1a4 4 0 0 1 4 4v13l-5-4h-9M10 11h9M10 15h6"/></svg><h1 data-en="BodoPechPech">بدو پچ پچ</h1></div>
-      <button id="language" class="quiet" type="button" lang="en">English</button>
+      <div class="header-actions">
+        <button id="theme" class="quiet" type="button" aria-label="تغییر به حالت تیره"><svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="theme-moon" d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/><g class="theme-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></g></svg><span id="theme-label">حالت تیره</span></button>
+        <button id="language" class="quiet" type="button" lang="en">English</button>
+      </div>
     </header>
     <p id="capability" role="status">در حال باز شدن… اگر این نوشته باقی ماند، این نمایشگر نمی‌تواند برنامه را اجرا کند. پیش‌نمایش پیوست در iPhone و iPad پشتیبانی نمی‌شود.<br><span lang="en" dir="ltr">Opening… If this stays visible, this viewer cannot run the app. iPhone and iPad attachment previews are not supported.</span></p>
     <noscript><p>این برنامه برای کار کردن به JavaScript نیاز دارد. / This app needs JavaScript to run; an attachment preview is not enough.</p></noscript>
@@ -36,7 +39,7 @@
           <form id="setup-form" autocomplete="off">
             <label for="setup-passphrase" data-en="Choose a passphrase">یک عبارت رمز انتخاب کنید</label>
             <div class="password-field"><input id="setup-passphrase" type="password" dir="auto" maxlength="1024" autocomplete="off" spellcheck="false" autocapitalize="off" aria-describedby="passphrase-hint"><button id="setup-show" type="button" class="quiet" aria-controls="setup-passphrase" aria-pressed="false">نمایش</button></div>
-            <button id="generate-passphrase" class="quiet" type="button" disabled data-en="Generate">ساخت خودکار</button>
+            <div class="password-actions"><button id="generate-passphrase" class="secondary" type="button" disabled data-en="Generate">ساخت خودکار</button></div>
             <p id="passphrase-hint" class="hint" data-en="At least 8 characters, one number and one symbol (like !). Or choose Generate. Keep it safe: there is no reset.">دست‌کم ۸ نویسه، یک عدد و یک نماد (مثل !). یا «ساخت خودکار» را بزنید. امن نگه دارید: بازنشانی ندارد.</p>
             <button id="generate" class="primary" type="submit" disabled data-en="Make & save conversation file">ساخت و ذخیرهٔ فایل گفت‌وگو</button>
           </form>
@@ -117,6 +120,7 @@
     </main>
     <footer>
       <details><summary data-en="About this private file">دربارهٔ این فایل خصوصی</summary>
+        <p data-en="Use the light/dark button at the top on any screen. The theme starts with your system preference; your choice stays for this tab until you reload or close it. Nothing is saved.">در هر صفحه، دکمهٔ حالت روشن/تیره بالای صفحه در دسترس است. رنگ اولیه از دستگاه گرفته می‌شود؛ انتخاب شما تا بارگذاری دوباره یا بستن این زبانه باقی می‌ماند. چیزی ذخیره نمی‌شود.</p>
         <p data-en="The saved conversation key is encrypted with your passphrase. A long, hard-to-guess passphrase matters: someone with the file can try guesses offline. Anyone with both can read old and new messages and write as either person. There is no passphrase recovery. Older unprotected copies remain usable.">کلید گفت‌وگو در فایل با عبارت رمز شما رمزگذاری شده است. عبارت رمز طولانی و غیرقابل‌حدس مهم است: دارندهٔ فایل می‌تواند بدون اینترنت رمزهای احتمالی را امتحان کند. هر کس فایل و رمز را داشته باشد می‌تواند پیام‌های قدیم و جدید را بخواند و به جای هر دو نفر بنویسد. بازیابی رمز وجود ندارد. نسخه‌های قدیمیِ بدون محافظت همچنان قابل استفاده‌اند.</p>
         <p data-en="Experimental, not independently audited. Messages are encrypted with AES-256-GCM. Persian wording is a reversible disguise, may sound artificial, and can be detected. There is no sender identity proof, replay protection or forward secrecy. Protect your device and clipboard too.">این نسخه آزمایشی است و بررسی امنیتی مستقل نشده است. پیام‌ها با AES-256-GCM رمز می‌شوند. متن فارسی فقط پوشش برگشت‌پذیر است؛ ممکن است مصنوعی باشد و شناسایی شود. هویت فرستنده ثابت نمی‌شود و از تکرار پیام یا افشای پیام‌های قبلی پس از لو رفتن فایل جلوگیری نمی‌شود. از دستگاه و کلیپ‌بورد خود هم مراقبت کنید.</p>
         <p data-en="No AI, network requests, browser storage or installation. Passphrases and messages are not saved in the file. Done clears messages but keeps this tab unlocked; closing or reloading locks it. Clearing cannot guarantee memory erasure. Protect your unlocked device and use a trusted HTML copy: someone who changes the file can change what it does.">هوش مصنوعی، درخواست اینترنتی، ذخیره‌سازی مرورگر یا نصب برنامه‌ای وجود ندارد. عبارت رمز و پیام‌ها در فایل ذخیره نمی‌شوند. «تمام شد» پیام‌ها را پاک می‌کند ولی زبانه باز می‌ماند؛ بستن یا بارگذاری مجدد آن را قفل می‌کند. پاک کردن، محو شدن قطعی از حافظه را تضمین نمی‌کند. از دستگاهِ بازشده و نسخهٔ معتبر فایل استفاده کنید؛ تغییر فایل می‌تواند کارِ آن را تغییر دهد.</p>

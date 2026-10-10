@@ -18,9 +18,9 @@
 <p align="center">
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/home-fa-dark.png"><img src="docs/assets/home-fa-light.png" width="800" alt="BodoPechPech in Persian after unlocking: the full بدو پچ پچ wordmark, paired-conversation icon, and Write a message and Read a message buttons."></picture>
 </p>
-<p align="center"><sub>BodoPechPech v0.4.2, offline in Windows Chrome. Light and dark follow your system. No message content is shown.</sub></p>
+<p align="center"><sub>BodoPechPech v0.4.3, offline in Windows Chrome. Switch light/dark from the header on any screen. No message content is shown.</sub></p>
 
-**[v0.4.2](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.4.2)** fixes private filenames and adds **Open saved conversation** for attachments Windows will not launch. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
+**[v0.4.3](https://github.com/BodoVPN/bodo-pech-pech/releases/tag/v0.4.3)** adds a visible light/dark button and fixes password-field alignment, spacing and focus. The download is the released, self-contained HTML; [SHA256SUMS.txt](https://github.com/BodoVPN/bodo-pech-pech/releases/latest/download/SHA256SUMS.txt) records its checksum. Earlier tags and release files remain unchanged.
 
 ## Quick start
 
@@ -40,6 +40,7 @@
   <li>فایل خصوصی را باز کنید و رمز را وارد کنید. <strong>نوشتن پیام</strong> متن فارسی برای کپی در پیام‌رسان می‌سازد؛ در <strong>خواندن پیام</strong> متن دریافتی را بچسبانید. همهٔ متن را بدون تغییر کلمات کپی کنید.</li>
 </ol>
 <p>اگر ویندوز فایل خصوصی را باز نمی‌کند، فایل اولیه را در Chrome یا Edge باز کنید، <strong>باز کردن گفت‌وگوی ذخیره‌شده</strong> را بزنید، فایل خصوصی قبلی را انتخاب کنید و رمز همان فایل را وارد کنید. فایل فقط روی همین دستگاه خوانده می‌شود؛ کلید، فایل و تنظیمات امنیتی تغییر نمی‌کنند. پس از بارگذاری دوبارهٔ فایل اولیه، فایل خصوصی را دوباره انتخاب کنید.</p>
+<p>دکمهٔ <strong>حالت روشن / حالت تیره</strong> بالای همهٔ صفحه‌هاست. رنگ اولیه از دستگاه گرفته می‌شود؛ پس از انتخاب شما، تغییر رنگ دستگاه آن را عوض نمی‌کند. با بارگذاری دوباره، رنگ دستگاه دوباره استفاده می‌شود؛ تنظیمی ذخیره نمی‌شود.</p>
 <p>رمز را نگه دارید؛ فراموشی آن ممکن است دسترسی را از بین ببرد. برای گفت‌وگوی قبلی، «محافظت از گفت‌وگوی قبلی» را بزنید؛ نسخه‌های قدیمیِ بدون محافظت با این کار امن یا باطل نمی‌شوند.</p>
 </div>
 
@@ -51,7 +52,9 @@ Passwords need **8 characters, a number and a symbol**; Persian/Arabic digits wo
 </p>
 <p align="center"><sub>Unlock once, then choose Write or Read. Narrow desktop-browser views—not Android test results.</sub></p>
 
-Switching to your messenger and **Done · clear messages** keep this tab unlocked. Done clears message fields and reply context. Closing, reloading or navigating away requires unlocking again. The monochrome light/dark theme follows your system automatically, with no extra setup or saved preference.
+Switching to your messenger and **Done · clear messages** keep this tab unlocked. Done clears message fields and reply context. Closing, reloading or navigating away requires unlocking again.
+
+Use **Light mode / Dark mode** in the header on any screen. The button names the mode it will switch to. The initial theme follows your system; once you choose, later system changes do not override it. Your choice lasts until reload or close. No preference is stored, and switching themes does not clear a draft or lock the conversation.
 
 ## How it works
 
@@ -196,6 +199,8 @@ The connection to Persian phrase encoding is the **choice of carrier**: language
 
 For a **password-protected file**, choose **Open saved conversation** in the starter, select the file, and enter its existing password. The saved file and original conversation key stay unchanged.
 
+Saved HTML files contain their own app version. To use the new theme button with an existing conversation, open the latest public starter and select your old private file there. Do not create a new conversation to upgrade the interface.
+
 For an **older unprotected file**, choose a password in the starter, open **Protect an older conversation**, and select the old private HTML file **or** paste its BPP1 setup code. Save the protected copy. It keeps the original key and reads existing v1/v2 messages; old HTML is read as data, never executed.
 
 Existing protected files still accept their original passwords, even if they do not meet today's creation rules. **Migration does not secure or revoke old unprotected copies.** [Migration details →](docs/KEY-STORAGE.md#runtime-and-migration)
@@ -208,7 +213,7 @@ Existing protected files still accept their original passwords, even if they do 
 | **Android / Galaxy A51-class phones** | Target platform; **not verified on a real device**. |
 | **iPhone / iPad, including Telegram attachments** | **Unsupported attachment-opening route; no working iOS path verified.** A preview is not an interactive browser. |
 
-The current single file is about **419 KiB**, with its font, CSS and script embedded. See [opening help and iOS findings](docs/OPENING-FILES.md), [current verification](docs/OPENING-VERIFICATION.md), [earlier branding verification](docs/BRANDING-VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
+The current single file is about **424 KiB**, with its font, CSS and script embedded. See [current UI verification](docs/THEME-VERIFICATION.md), [opening help and iOS findings](docs/OPENING-FILES.md), [Windows opening verification](docs/OPENING-VERIFICATION.md) and the [Android checklist](docs/ANDROID-CHECK.md).
 
 ## Build and check
 
@@ -224,7 +229,7 @@ npm run check
 | Explore | Read more |
 | --- | --- |
 | Formats | [Message v2](docs/FORMAT-V2.md) · [Legacy v1](docs/FORMAT.md) · [Protected key storage](docs/KEY-STORAGE.md) |
-| Evidence | [Current verification](docs/OPENING-VERIFICATION.md) · [Opening help](docs/OPENING-FILES.md) · [Earlier branding verification](docs/BRANDING-VERIFICATION.md) · [Historical codec comparison](docs/VERIFICATION-V2.md) |
+| Evidence | [Current UI verification](docs/THEME-VERIFICATION.md) · [Windows opening verification](docs/OPENING-VERIFICATION.md) · [Opening help](docs/OPENING-FILES.md) · [Historical codec comparison](docs/VERIFICATION-V2.md) |
 | Visuals | [Screenshot provenance](docs/assets/README.md) · [Font attribution](assets/fonts/vazirmatn/README.md) |
 
 Typography uses **Vazirmatn v33.003**, embedded with its SIL Open Font License 1.1 and attribution. No project software license has been selected. No AI is shipped; the [earlier model investigation](docs/MODEL-NOTE.md) is historical only.

@@ -6,13 +6,13 @@ import test, { after } from 'node:test';
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
 import { createPair, encryptBytes, encryptBytesV2, textToBytes } from '../src/crypto.ts';
-import { unlockConversation } from '../src/key-storage.ts';
+import { unlockConversation, validateNewPassphrase } from '../src/key-storage.ts';
 import { encodeCover } from '../src/codec.ts';
 import { decodeMessageCover, encodeDialogue } from '../src/dialogue.ts';
 
 const fileUrl = pathToFileURL(resolve('bodo-pech-pech.html')).href;
 const channels = (process.env.BROWSER_CHANNELS || 'chrome,msedge').split(',');
-const passphrase = 'Disposable test words river garden moon';
+const passphrase = 'Disposable test words river garden moon 7!';
 const testRoot = resolve('../../work/pech-pech-tests');
 await mkdir(testRoot, { recursive: true });
 await mkdir('test-results', { recursive: true });
@@ -373,7 +373,7 @@ for (const channel of channels) test(`${channel}: unlock recovery, Unicode, visi
   const browser = await chromium.launch({ channel, headless: true });
   try {
     const context = await browser.newContext({ offline: true }); const page = await context.newPage(); const clean = observe(page);
-    const password = 'باغ ماه رودخانه 👋 café آسمان';
+    const password = 'باغ ماه رودخانه 👋 café آسمان ۷';
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
     await page.locator('#setup-passphrase').fill('1234'); await page.locator('#generate').click();
     await page.locator('#error').waitFor({ state: 'visible' });
@@ -476,7 +476,7 @@ test('edited input and page abandonment invalidate delayed KDF results without c
     await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' }); await holdKdf();
     await page.locator('#setup-passphrase').fill(passphrase); await page.locator('#generate').click();
     await page.waitForFunction(() => !!globalThis.releaseKdf);
-    await page.locator('#setup-passphrase').fill('different passphrase while deriving');
+    await page.locator('#generate-passphrase').click();
     await page.evaluate(() => globalThis.releaseKdf());
     await page.waitForFunction(() => !document.getElementById('generate').disabled);
     assert.equal(await page.locator('#download-panel').isHidden(), true);
@@ -495,6 +495,7 @@ test('setup and unlock reflow at 320px and 200% text with accessible Show/Hide',
         await page.locator('html').evaluate((node, fontSize) => { node.style.fontSize = fontSize; }, size);
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         for (const id of [`${prefix}-show`, prefix === 'setup' ? 'generate' : 'unlock']) assert.ok((await page.locator(`#${id}`).boundingBox()).height >= 48);
+        if (prefix === 'setup') assert.ok((await page.locator('#generate-passphrase').boundingBox()).height >= 48);
       }
       await page.locator(`#${prefix}-show`).click();
       assert.equal(await page.locator(`#${prefix}-show`).textContent(), 'Hide');
@@ -504,5 +505,38 @@ test('setup and unlock reflow at 320px and 200% text with accessible Show/Hide',
       await page.locator(`#${prefix}-show`).click();
       assert.equal(await page.locator(`#${prefix}-passphrase`).getAttribute('type'), 'password');
     }
+  } finally { await browser.close(); }
+});
+
+test('Generate only fills the editable setup field, preserves legacy selection and works end-to-end', { timeout: 30_000 }, async () => {
+  const browser = await chromium.launch({ channel: channels[0], headless: true });
+  try {
+    const page = await (await browser.newContext({ offline: true })).newPage(); const clean = observe(page);
+    const pair = await createPair(); const code = pair.code.replace(/[\s-]/g, '');
+    const old = `<html><head><meta name="bpp-conversation" content="${code}"><style></style></head></html>`;
+    let downloads = 0; page.on('download', () => { downloads++; });
+    await page.goto(fileUrl); await page.locator('#setup-panel').waitFor({ state: 'visible' });
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { globalThis.unwantedCopy = true; } } }));
+    await page.locator('#legacy-setup').evaluate((node) => { node.open = true; });
+    await page.locator('#import-code').fill(pair.code);
+    await page.locator('#import-file').setInputFiles({ name: 'old-private.html', mimeType: 'text/html', buffer: Buffer.from(old) });
+    await page.locator('#generate-passphrase').click();
+    const generated = await page.locator('#setup-passphrase').inputValue();
+    assert.equal(generated.length, 16); validateNewPassphrase(generated);
+    assert.equal(await page.locator('#setup-passphrase').getAttribute('type'), 'text');
+    assert.equal(await page.locator('#setup-show').getAttribute('aria-pressed'), 'true');
+    assert.ok(await page.locator('#import-code').inputValue() === pair.code);
+    assert.equal(await page.locator('#import-file').evaluate((input) => input.files.length), 1);
+    assert.equal(await page.evaluate(() => globalThis.unwantedCopy), undefined);
+    assert.equal(downloads, 0); assert.equal(await page.locator('#download-panel').isHidden(), true);
+    // Ordinary editing stays possible; use the generated value for this migration.
+    await page.locator('#setup-passphrase').fill(generated + 'x'); await page.locator('#setup-passphrase').fill(generated);
+    await page.locator('#import-code').fill('');
+    const file = await saveDownload(page, () => page.locator('#import').click());
+    assert.equal(downloads, 1); assert.ok(!file.html.includes(generated));
+    await page.goto(file.url); await unlockFile(page, generated);
+    assert.equal(await read(page, encodeCover(await encryptBytes(pair.key, textToBytes('generator preserved the old conversation'), 0))), 'generator preserved the old conversation');
+    assert.equal(await page.locator('#unlock-form #generate-passphrase').count(), 0);
+    clean();
   } finally { await browser.close(); }
 });

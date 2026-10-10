@@ -11,8 +11,8 @@ function passphraseBytes(value: string, creating = false): Uint8Array<ArrayBuffe
   if (value.length > 1024 || /[\uD800-\uDFFF]/u.test(value)) throw new Error('Invalid passphrase text');
   // NFC only: preserve case, spaces, Persian/Arabic variants and ZWNJ.
   const normalized = value.normalize('NFC');
-  if (creating && (Array.from(normalized).length < 16 || /^[\p{N}\s]*$/u.test(normalized))) {
-    throw new Error('Choose a long passphrase, not a PIN');
+  if (creating && (Array.from(normalized).length < 8 || !/\p{Nd}/u.test(normalized) || !/[\p{P}\p{S}]/u.test(normalized))) {
+    throw new Error('Use at least 8 characters, one number and one symbol');
   }
   const bytes = new TextEncoder().encode(normalized);
   if (!bytes.length || bytes.length > MAX_PASSPHRASE_BYTES) { bytes.fill(0); throw new Error('Passphrase length is outside the supported range'); }
@@ -20,6 +20,27 @@ function passphraseBytes(value: string, creating = false): Uint8Array<ArrayBuffe
 }
 
 export function validateNewPassphrase(value: string): void { passphraseBytes(value, true).fill(0); }
+
+export function generatePassphrase(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*+-=?';
+  const limit = 256 - (256 % alphabet.length);
+  for (;;) {
+    let candidate = '';
+    while (candidate.length < 16) {
+      const random = crypto.getRandomValues(new Uint8Array(32));
+      try {
+        for (const byte of random) {
+          // Rejection sampling keeps each alphabet character equally likely.
+          if (byte >= limit) continue;
+          candidate += alphabet[byte % alphabet.length];
+          if (candidate.length === 16) break;
+        }
+      } finally { random.fill(0); }
+    }
+    // Reject the whole candidate rather than reserving predictable positions.
+    if (/[2-9]/.test(candidate) && /[!@#$%&*+\-=?]/.test(candidate)) return candidate;
+  }
+}
 
 export function parseEnvelope(value: string): Uint8Array<ArrayBuffer> {
   if (value.length !== ENVELOPE_LENGTH || !/^BPK1-[0-9A-F]{174}$/.test(value)) throw new Error('Invalid protected-file envelope');

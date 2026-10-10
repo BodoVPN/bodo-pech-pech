@@ -24,7 +24,8 @@
           <form id="setup-form" autocomplete="off">
             <label for="setup-passphrase" data-en="Choose a passphrase">یک عبارت رمز انتخاب کنید</label>
             <div class="password-field"><input id="setup-passphrase" type="password" dir="auto" maxlength="1024" autocomplete="off" spellcheck="false" autocapitalize="off" aria-describedby="passphrase-hint"><button id="setup-show" type="button" class="quiet" aria-controls="setup-passphrase" aria-pressed="false">نمایش</button></div>
-            <p id="passphrase-hint" class="hint" data-en="Use five unrelated words (at least 16 characters), not a PIN. Remember it: there is no reset or recovery.">پنج واژهٔ نامرتبط بنویسید (دست‌کم ۱۶ نویسه)، نه پین. به خاطر بسپارید: بازیابی یا بازنشانی ندارد.</p>
+            <button id="generate-passphrase" class="quiet" type="button" disabled data-en="Generate">ساخت خودکار</button>
+            <p id="passphrase-hint" class="hint" data-en="At least 8 characters, one number and one symbol (like !). Or choose Generate. Keep it safe: there is no reset.">دست‌کم ۸ نویسه، یک عدد و یک نماد (مثل !). یا «ساخت خودکار» را بزنید. امن نگه دارید: بازنشانی ندارد.</p>
             <button id="generate" class="primary" type="submit" disabled data-en="Make & save conversation file">ساخت و ذخیرهٔ فایل گفت‌وگو</button>
           </form>
           <details id="legacy-setup"><summary data-en="Protect an older conversation">محافظت از گفت‌وگوی قبلی</summary>

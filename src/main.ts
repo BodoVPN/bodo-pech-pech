@@ -1,7 +1,7 @@
 import { bytesToText, createPair, decryptBytes, encryptBytesV2, MAX_MESSAGE_BYTES, textToBytes } from './crypto.ts';
 import { chooseProfile, decodeMessageCover, encodeDialogue } from './dialogue.ts';
 import { personalFile } from './personal-file.ts';
-import { createProtectedConversation, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectedFileId, unlockConversation, validateNewPassphrase } from './key-storage.ts';
+import { createProtectedConversation, generatePassphrase, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectedFileId, unlockConversation, validateNewPassphrase } from './key-storage.ts';
 
 declare const __BPP_SHELL__: string;
 const script = document.currentScript?.textContent ?? '';
@@ -45,6 +45,7 @@ function fail(fa: string, en: string): void {
 }
 function buttons(): void {
   for (const id of ['generate', 'import', 'unlock']) button(id).disabled = !supported || busy || deriving;
+  button('generate-passphrase').disabled = !supported;
   for (const id of ['encrypt', 'decrypt', 'paste-cover']) button(id).disabled = !key || busy;
   for (const id of ['copy-cover', 'copy-plain', 'reply']) button(id).disabled = busy;
 }
@@ -118,6 +119,15 @@ for (const id of ['setup', 'unlock']) {
   });
   el(`${id}-passphrase`).addEventListener('input', () => { cancelPending(); feedback(); });
 }
+button('generate-passphrase').addEventListener('click', () => {
+  if (!supported || downloadEnvelope) return;
+  cancelPending(); feedback();
+  try {
+    const field = el<HTMLInputElement>('setup-passphrase');
+    field.value = generatePassphrase(); field.type = 'text';
+    visibilityLabel('setup'); field.focus();
+  } catch { fail('عبارت رمز ساخته نشد. دوباره امتحان کنید.', 'The passphrase could not be generated. Try again.'); }
+});
 // Native Web Crypto cannot be aborted. Invalidate results, but allow only one
 // key operation until its promise settles, including after an input change.
 async function keyOperation(operation: () => Promise<() => void>, error: [string, string]): Promise<void> {
@@ -128,7 +138,7 @@ function prepareFile(migrate: boolean): void {
   if (!supported || busy || deriving || downloadEnvelope) return;
   let passphrase = el<HTMLInputElement>('setup-passphrase').value;
   try { validateNewPassphrase(passphrase); } catch {
-    fail('عبارت رمزی طولانی انتخاب کنید: دست‌کم ۱۶ نویسه، بهتر است پنج واژهٔ نامرتبط باشد. از پین استفاده نکنید.', 'Choose a long passphrase: at least 16 characters, ideally five unrelated words. Do not use a PIN.'); return;
+    fail('دست‌کم ۸ نویسه، یک عدد و یک نماد وارد کنید. فاصله نماد نیست.', 'Use at least 8 characters, one number and one symbol. A space is not a symbol.'); return;
   }
   let code = migrate ? el<HTMLInputElement>('import-code').value : undefined;
   const file = migrate ? el<HTMLInputElement>('import-file').files?.[0] : undefined;

@@ -7,16 +7,16 @@ Everyday use has two large Persian buttons: **نوشتن پیام** (Write a mes
 ## Prepare once
 
 1. Open a trusted copy of [bodo-pech-pech.html](bodo-pech-pech.html) in Chrome or Edge. On GitHub, use **Download raw file**, then open the saved file in the full browser.
-2. Enter one long passphrase, ideally five unrelated words (minimum 16 characters; no PIN). Show/Hide helps check it without a second confirmation field. Choose **Make & save conversation file**. If no download appears, choose **Save the file again**. Browser save prompts and Downloads remain outside the page's control.
+2. Enter a passphrase with **at least 8 characters, one number and one symbol**, or choose **Generate** for a random 16-character suggestion. Persian/Arabic digits work; spaces do not count as symbols. Generate fills and shows the editable field without saving or copying anything. Show/Hide helps check it without a second confirmation field. Choose **Make & save conversation file**. If no download appears, choose **Save the file again**. Browser save prompts and Downloads remain outside the page's control.
 3. Open the downloaded private `pech-pech-private-….html` file and **Unlock** with that passphrase. Give **the same file** and passphrase to the other person privately; keep the passphrase separate from the file when sending it. Do not create two different files independently.
 
-**The saved conversation key is encrypted with your passphrase.** Someone holding the file can try passphrase guesses offline; minimum length does not prove strength. Use a long, hard-to-guess phrase and keep it safe: there is no reset or recovery. Anyone with the file and passphrase can read old/new messages and write as either person. The generic file has no conversation secret. Each new setup creates an independent random 256-bit key; the passphrase protects that key rather than replacing it.
+**The saved conversation key is encrypted with your passphrase.** Someone holding the file can try passphrase guesses offline; eight characters plus composition is an acceptance minimum, not a strength guarantee. The generated value is recommended. Keep it safe: there is no reset or recovery. Anyone with the file and passphrase can read old/new messages and write as either person. The generic file has no conversation secret. Each new setup creates an independent random 256-bit key; the passphrase protects that key rather than replacing it.
 
 Trust still depends on an authentic, unmodified HTML file and private handover. A helper who creates the file knows its passphrase. If the key or passphrase is exposed, create a new conversation and hand it over privately; changing storage protection cannot secure already-exposed traffic.
 
 ## Everyday use
 
-- **Unlock once:** opening or reloading asks for the passphrase. Enter submits. Switching to your messenger and returning keeps the tab unlocked.
+- **Unlock once:** opening or reloading asks for the passphrase. Enter submits. Switching to your messenger and returning keeps the tab unlocked. Existing protected files still accept their original passphrases, even without a number or symbol; the new rules apply only when creating/protecting a file.
 - **Send:** **Write a message** → write → **Prepare message** → **Copy text**, then paste the entire result into your messenger. Do not edit or shorten the cover.
 - **Read:** **Read a message** → paste the received text → **Read message**. **Write a reply** continues the visible conversation automatically.
 - **Done · clear messages** clears message fields/context and returns to the two buttons, keeping the tab unlocked. Closing, reloading or navigating away drops the runtime key. Reopening requires the passphrase and retains the same conversation.

@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { createCipheriv, createDecipheriv, pbkdf2Sync, randomBytes } from 'node:crypto';
 import test from 'node:test';
 import { bytesToText, createPair, decryptBytes, encryptBytes, textToBytes } from '../src/crypto.ts';
-import { createProtectedConversation, KDF_ITERATIONS, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectKey, unlockConversation, validateNewPassphrase } from '../src/key-storage.ts';
+import { createProtectedConversation, generatePassphrase, KDF_ITERATIONS, legacyCodeFromHtml, MAX_LEGACY_FILE_BYTES, parseEnvelope, protectKey, unlockConversation, validateNewPassphrase } from '../src/key-storage.ts';
 import { personalFile } from '../src/personal-file.ts';
 
-const password = 'café river garden moon apple';
+const password = 'café river garden moon apple 7!';
 const encode = (bytes: Uint8Array): string => `BPK1-${Buffer.from(bytes).toString('hex').toUpperCase()}`;
 
 test('native protection interoperates with independent Node PBKDF2 and AES-GCM in both directions', async () => {
@@ -59,16 +59,54 @@ test('unsupported versions, suite, normalization and cost are rejected before an
   assert.equal(KDF_ITERATIONS, 600_000);
 });
 
-test('Unicode passphrases use NFC only; creation bounds reject PINs and malformed text', async () => {
-  const unicode = 'واژه‌های فارسی 👋 café باغ ماه';
+test('Unicode passphrases use NFC only; creation bounds reject malformed text', async () => {
+  const unicode = 'واژه‌های فارسی 👋 café باغ ماه ۷';
   const envelope = await createProtectedConversation(unicode);
   await unlockConversation(envelope, unicode.normalize('NFD'));
   await assert.rejects(unlockConversation(envelope, unicode.replace('ی', 'ي')));
-  for (const invalid of ['', '1234', '۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰', ' '.repeat(20), 'short words', 'a'.repeat(1025), '🌙'.repeat(257), 'invalid high \ud800 surrogate']) {
+  for (const invalid of ['', '1234', '۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶۷۸۹۰', ' '.repeat(20), 'short words', 'a'.repeat(1023) + '1!', '🌙'.repeat(256) + '1!', 'invalid high \ud800 surrogate 1!']) {
     assert.throws(() => validateNewPassphrase(invalid));
   }
-  assert.doesNotThrow(() => validateNewPassphrase('a'.repeat(1024)));
+  assert.doesNotThrow(() => validateNewPassphrase('a'.repeat(1022) + '1!'));
   await assert.rejects(unlockConversation(envelope, '\ud800'));
+});
+
+test('creation requires only eight NFC characters, a decimal digit and punctuation or symbol', async () => {
+  for (const invalid of ['abcde1!', 'abcdefgh!', 'abcdefgh1', 'abcdef1 ', 'abcdef1\u200c', 'abcdef²!', 'abcde\u03011!']) {
+    assert.throws(() => validateNewPassphrase(invalid));
+  }
+  for (const valid of ['abcdef1!', '1234567!', '!!!!!!12', 'سلام۱۲۳!', 'مرحبا١٢!', 'abcdef1😀', 'abcdef۱؟', 'abcdef1€', 'abcdef1_', 'abcde\u0301f1!']) {
+    assert.doesNotThrow(() => validateNewPassphrase(valid));
+  }
+  const envelope = await createProtectedConversation('1234567!');
+  await unlockConversation(envelope, '1234567!');
+});
+
+test('generated suggestions are random printable 16-character values usable for protection and unlock', async () => {
+  const values = new Set<string>();
+  for (let i = 0; i < 200; i++) {
+    const value = generatePassphrase();
+    assert.ok(value.length === 16 && /^[A-HJ-NP-Za-hjkmnp-z2-9!@#$%&*+\-=?]+$/.test(value));
+    assert.doesNotThrow(() => validateNewPassphrase(value)); values.add(value);
+  }
+  assert.equal(values.size, 200);
+  const value = generatePassphrase();
+  await unlockConversation(await createProtectedConversation(value), value);
+});
+
+test('previously protected files with no number or symbol still unlock', async () => {
+  const oldPassword = 'café river garden moon apple';
+  assert.throws(() => validateNewPassphrase(oldPassword));
+  const raw = randomBytes(32);
+  const header = Buffer.alloc(39);
+  header.set([0x42, 0x50, 0x4b, 1, 1, 1, 1]); header.writeUInt32BE(600_000, 7);
+  header.set(randomBytes(16), 11); header.set(randomBytes(12), 27);
+  const cipher = createCipheriv('aes-256-gcm', pbkdf2Sync(oldPassword, header.subarray(11, 27), 600_000, 32, 'sha256'), header.subarray(27));
+  cipher.setAAD(header);
+  const envelope = encode(Buffer.concat([header, cipher.update(raw), cipher.final(), cipher.getAuthTag()]));
+  const key = await unlockConversation(envelope, oldPassword.normalize('NFD'));
+  const original = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  assert.equal(bytesToText(await decryptBytes(key, await encryptBytes(original, textToBytes('original conversation'), 0))), 'original conversation');
 });
 
 test('legacy migration preserves the original key without exporting raw code or passphrase', async () => {

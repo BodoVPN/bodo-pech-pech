@@ -12,7 +12,7 @@ const scratch = await mkdtemp(resolve(scratchRoot, 'visual-private-'));
 if (dirname(scratch) !== scratchRoot) throw new Error('Scratch path is outside the owned root');
 const genericUrl = pathToFileURL(resolve('bodo-pech-pech.html')).href;
 const records = [];
-const passphrase = 'Disposable visual review words only';
+const passphrase = 'Disposable visual review words only 7!';
 
 try {
   for (const channel of ['chrome', 'msedge']) {

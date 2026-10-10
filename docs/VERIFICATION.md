@@ -1,18 +1,19 @@
 # Protected-file verification — 2026-10-10
 
-The generic 0.4 HTML is **416,351 bytes (406.6 KiB)**. SHA-256: `72d2dc0963a25e99b4a0d3c8115258e645a34b74a801688f3bf98b5577324eab`. Each protected export adds exactly 179 ASCII bytes in the inert metadata slot. The generic tracked file has no conversation key or protected envelope. No model, runtime download, server or companion asset is required. This is the feature branch's review artifact, not a replacement for the published v0.3.0 release.
+The generic 0.4 HTML is **417,243 bytes (407.5 KiB)**. SHA-256: `fef054f812608398cf0a23681ad0a0bd005db53d4c6d12b7d6011d07a994d4b9`. Each protected export adds exactly 179 ASCII bytes in the inert metadata slot. The generic tracked file has no conversation key or protected envelope. No model, runtime download, server or companion asset is required. This is the feature branch's review artifact, not a replacement for the published v0.3.0 release.
 
 ## Fresh checks
 
-`npm run check` passed TypeScript, ESLint with zero warnings, **27 protocol/storage tests and 16 browser tests**, with none skipped. Real downloads and offline `file://` reopen were tested in Windows **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**. Observed flows emitted no HTTP requests, page errors or console errors. Tests use disposable passphrases/keys only; downloaded private files are removed from an owned scratch directory after completion.
+`npm run check` passed TypeScript, ESLint with zero warnings, **30 protocol/storage tests and 17 browser tests**, with none skipped. Real downloads and offline `file://` reopen were tested in Windows **Chrome 155.0.8059.39** and **Edge 156.0.4314.15**. Observed flows emitted no HTTP requests, page errors or console errors. Tests use disposable passphrases/keys only; downloaded private files are removed from an owned scratch directory after completion.
 
 Message crypto, v1 codec, v2 grammar/parser/tables and byte packing are unchanged from main `b0b85ce`. Frozen v1/v2 fixtures, independent Node AES fixtures, all 30 public profiles, exact Unicode/BOM/whitespace/emoji, arbitrary bytes, bounds and tampered messages still pass. Storage is a separate [BPK1 envelope](KEY-STORAGE.md).
 
-Storage tests cover independent Node PBKDF2/AES-GCM interoperability in both directions, original random-key recovery, fresh salt/nonce, non-extractable runtime keys, wrong passphrases, salt/nonce/ciphertext/tag corruption, NFC-equivalent Unicode passphrases, significant spaces/case/Persian letter variants, lone surrogates and length/PIN rejection. Every fixed header byte is mutated; a derivation spy proves unsupported parameters and malformed/oversized envelope strings are rejected **before** KDF work. Legacy migration preserves the exact original key and existing covers.
+Storage tests cover independent Node PBKDF2/AES-GCM interoperability in both directions, original random-key recovery, fresh salt/nonce, non-extractable runtime keys, wrong passphrases, salt/nonce/ciphertext/tag corruption, NFC-equivalent Unicode passphrases, significant spaces/case/Persian letter variants, lone surrogates and length bounds. Creation-policy tests cover seven/eight-character boundaries after NFC, missing digit/symbol, whitespace/format characters not counting as symbols, Persian/Arabic decimal digits, punctuation/emoji symbols and acceptance without letters/case requirements. Two hundred generated suggestions meet the 16-character alphabet/composition rules; generated protection/unlock succeeds. An independent old-envelope fixture with no digit or symbol still unlocks and recovers its original conversation. Every fixed header byte is mutated; a derivation spy proves unsupported parameters and malformed/oversized envelope strings are rejected **before** KDF work. Legacy migration preserves the exact original key and existing covers.
 
 ## Browser behavior
 
 - Actual downloaded protected files unlock with one field/button or Enter. Wrong passphrases remain locked and allow retry. Show/Hide updates type, text and accessible pressed/control relationships in both languages. Submission clears the field; exports contain neither passphrase nor raw BPP1 key/code.
+- Setup Generate fills an editable, visible 16-character value and updates Show/Hide state. It causes no download or clipboard write and preserves both selected legacy HTML and entered legacy code. The generated passphrase protects the selected original conversation and unlocks its existing message. Generation during a pending derivation invalidates the stale result. There is no generator in the unlock form.
 - Two isolated peers exchange messages and replies; an actual Chrome → Edge → Chrome flow passes. V1/v2 recovery, exact private Unicode and existing cover normalization remain intact.
 - Switching tabs/focus/visibility retains unlock. Done clears all message fields and reply context while retaining the key. Reload/reopen requires unlock. Navigate away and Back requires unlock and clears previous plaintext. Explicit pagehide/pageshow coverage exercises the back-forward-cache lifecycle handler as well.
 - Delayed native derivation plus an input change cannot open the conversation or create a download. A second submission during the pending operation cannot launch another derivation. Page abandonment invalidates delayed unlock results. Done and delayed clipboard/encryption tests still prevent stale message restoration.
@@ -27,14 +28,14 @@ Five runs per installed browser, fixed 600,000 PBKDF2-HMAC-SHA-256 iterations, a
 
 | Browser | Runs (ms) | Median |
 | --- | --- | --- |
-| Chrome 155.0.8059.39 | 69, 69, 69, 69, 69 | 69 ms |
-| Edge 156.0.4314.15 | 71, 71, 70, 69, 74 | 71 ms |
+| Chrome 155.0.8059.39 | 71, 75, 73, 72, 70 | 72 ms |
+| Edge 156.0.4314.15 | 70, 70, 69, 70, 69 | 70 ms |
 
 These are local observations, not performance guarantees or Android measurements. No cost reduction is made for slow devices. Budget-phone unlock/startup latency and file handling remain unverified.
 
 ## Visual and font review
 
-The existing white/gray/charcoal layout and Write/Read/Reply/Done screens remain intact. Necessary additions are the setup passphrase field/Show-Hide, one unlock screen and old-HTML migration option. No animation or GPU-heavy effect was added. At 320px width and 200% text enlargement, setup/unlock reflow without document overflow; tested buttons retain at least 48px targets. Existing home/write checks continue at 390/320px. This is text enlargement, not native mobile pinch-zoom validation or a full accessibility audit.
+The existing white/gray/charcoal layout and Write/Read/Reply/Done screens remain intact. Necessary additions are the setup passphrase field with Show/Hide and Generate, one unlock screen and old-HTML migration option. No animation or GPU-heavy effect was added. At 320px width and 200% text enlargement, setup/unlock reflow without document overflow; tested buttons, including Generate, retain at least 48px targets. Existing home/write checks continue at 390/320px. This is text enlargement, not native mobile pinch-zoom validation or a full accessibility audit.
 
 The original official Vazirmatn v33.003 variable WOFF2 remains embedded, with its full SIL OFL 1.1 and attribution. Font asset SHA-256 remains `4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92`. Browser tests inspect actual custom rendered glyph fonts in Persian and English for downloaded-file home, starter download and unlock headings while offline. See [font provenance](../assets/fonts/vazirmatn/README.md).
 

@@ -10,7 +10,7 @@ Use the current public `bodo-pech-pech.html` starter in Chrome or Edge:
 
 This reads the protected conversation envelope locally as text. It does not execute the selected HTML, upload anything, rewrite the file, replace the conversation key, or remove Windows security metadata. Existing messages and replies use the same key. Reloading the public starter requires selecting the private file again. Keep both files, and do not make a new conversation to recover an old one.
 
-New private downloads are named `bodo-pech-pech-private-xxxxxxxx.html`. Earlier names remain readable; renaming is not required. Older **unprotected** HTML and BPP1 setup codes belong under **Protect an older conversation** instead.
+New private downloads are named `bodo-pech-pech-private-xxxxxxxx.html`. Earlier names remain readable; renaming is not required. Older **unprotected** HTML and BPP1 setup codes belong under **About → Protect an older conversation** instead.
 
 ### Why Windows can block a valid HTML attachment
 
